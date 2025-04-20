@@ -1,4 +1,4 @@
-```markdown
+
 # 📖 SpectralReader - Advanced Literary Analysis Engine
 
 [Live Demo 🚀](https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app/)
