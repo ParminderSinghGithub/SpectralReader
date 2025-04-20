@@ -118,7 +118,7 @@ streamlit run main.py
 
 ## 📜 Requirements
 
-See the complete dependency list in [requirements.txt](requirements.txt):
+See the complete dependency list in [requirements.txt](app/requirements.txt):
 
 
 ---
