@@ -1,124 +1,130 @@
-# 📖 SpectralReader - RAG-Powered Literary Analysis
+```markdown
+# 📖 SpectralReader - Advanced Literary Analysis Engine
 
-![RAG Architecture Diagram](https://via.placeholder.com/800x400.png?text=RAG+Architecture+Diagram)
+[Live Demo 🚀](https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app/)
 
-SpectralReader leverages Retrieval-Augmented Generation (RAG) to deliver precise literary analysis by combining document retrieval with advanced language generation.
+![Demo](demo.gif)
+
+SpectralReader is an AI‑powered literary analysis tool that specializes in character exploration, theme identification, and plot analysis for novels, plays, and short stories. Under the hood, it employs a **Retrieval‑Augmented Generation (RAG)** pipeline—combining semantic retrieval of relevant text passages with state‑of‑the‑art generative models—to deliver **accurate**, **transparent**, and **context‑aware** literary insights.
+
+---
+
+## ✨ Features
+
+- **Character Analysis**: Identify and analyze characters with detailed profiles  
+- **Theme Exploration**: Discover underlying themes and motifs  
+- **Plot Insights**: Understand narrative structure and key events  
+- **Contextual Understanding**: Deep comprehension of literary devices  
+- **Transparent Sourcing**: See exactly which passages support each answer  
+- **Real‑Time Monitoring**: Processing metrics and resource tracking  
 
 ---
 
 ## 🧠 Core RAG Architecture
 
-### Retrieval-Augmented Generation Pipeline
+SpectralReader’s RAG pipeline consists of three main phases:
 
-1. **Document Processing**:
-   - PDF text extraction and cleaning
-   - Semantic chunking with chapter awareness
-   - Vector embeddings using MPNet
+1. **Document Processing**  
+   - PDF text extraction & cleaning (via PDFplumber)  
+   - Semantic chunking with chapter/scene boundaries  
+   - Vector embeddings using MPNet sentence‑transformers  
 
-2. **Dual-Phase Retrieval**:
-   - First-stage FAISS similarity search
-   - Cross-encoder reranking for precision
-   - Dynamic context window construction
+2. **Dual‑Phase Retrieval**  
+   - **Stage 1**: FAISS index for approximate nearest‑neighbour search  
+   - **Stage 2**: Cross‑encoder (MiniLM‑L12) reranking for top‑k passage precision  
+   - Dynamic context window assembly  
 
-3. **Augmented Generation**:
-   - FLAN-T5 conditioned on retrieved passages
-   - Confidence-scored responses
-   - Character-focused prompt engineering
-
----
-
-## ✨ Key RAG Features
-
-- **Precision Retrieval**: Finds relevant passages even in long documents.
-- **Context-Aware Generation**: Answers grounded in actual text.
-- **Transparent Analysis**: Displays source passages for verification.
-- **Adaptive Chunking**: Preserves literary structure (chapters, scenes).
+3. **Augmented Generation**  
+   - FLAN‑T5 Large conditioned on retrieved & reranked passages  
+   - Confidence scores for each response  
+   - Prompt templates optimized for literary questions  
 
 ---
 
-## 🛠️ Enhanced Technology Stack
-
-### RAG Components
-
-| Component         | Purpose                       | Technology                  |
-|-------------------|-------------------------------|-----------------------------|
-| **Retriever**     | Finds relevant text passages  | FAISS + MPNet embeddings    |
-| **Reranker**      | Improves passage relevance    | Cross-Encoder (MiniLM-L12)  |
-| **Generator**     | Produces analytical responses | FLAN-T5 Large               |
-| **Orchestration** | Manages RAG pipeline          | LangChain                   |
-
----
-
-## 📊 Updated System Architecture
+### 📊 RAG System Architecture
 
 ```mermaid
 graph TD
-    A[PDF Upload] --> B[Text Extraction]
-    B --> C[Text Chunking]
-    C --> D[Vector Embedding]
+    A[PDF Upload] --> B[Text Extraction & Cleaning]
+    B --> C[Semantic Chunking]
+    C --> D[MPNet Embedding]
     D --> E[FAISS Index]
     E --> F[User Query]
-    F --> G[Semantic Search]
-    G --> H[Passage Reranking]
-    H --> I[Context Augmentation]
-    I --> J[FLAN-T5 Generation]
-    J --> K[Analyzed Response]
+    F --> G[Approximate Search]
+    G --> H[Cross‑Encoder Reranking]
+    H --> I[Context Window Assembly]
+    I --> J[FLAN‑T5 Generation]
+    J --> K[Insights & Source Passages]
 ```
 
 ---
 
-## 🤔 Why RAG for Literature?
+## 🛠️ Technology Stack
 
-1. **Accuracy**: Avoids hallucination by grounding answers in text.
-2. **Transparency**: Shows retrieved passages supporting answers.
-3. **Flexibility**: Handles diverse literary questions.
-4. **Scalability**: Processes full novels efficiently.
+### Core RAG Components
+
+| Component         | Purpose                          | Technology                       |
+|-------------------|----------------------------------|----------------------------------|
+| **Retriever**     | Approximate semantic search      | FAISS + MPNet embeddings         |
+| **Reranker**      | Precision passage ranking        | Cross‑Encoder (MiniLM‑L12)       |
+| **Generator**     | Context‑aware answer generation  | FLAN‑T5 Large                    |
+| **Orchestration** | Pipeline management & tooling    | LangChain                        |
+
+### Supporting Libraries & Tools
+
+- **Streamlit**: Interactive web interface  
+- **PDFplumber**: PDF text extraction  
+- **Sentence‑Transformers**: Embeddings & cross‑encoders  
+- **PyTorch**: Model inference  
+- **Docker**: Containerized deployment (optional)  
 
 ---
 
-## 🧪 Usage Example (RAG Flow)
+## 🚀 Getting Started
 
-```python
-# Typical RAG operation in SpectralReader:
+### Prerequisites
 
-# 1. User asks a question:
-question = "Who is the ghost in Canterville Chase?"
+- Python 3.8 or higher  
+- `pip` package manager  
 
-# 2. System retrieves 3 most relevant passages:
-retrieved_passages = [
-    "Sir Simon's tragic backstory from Chapter 2",
-    "His haunting tactics described in Chapter 3",
-    "Interactions with the Otis family in Chapter 5"
-]
+### Installation
 
-# 3. Generator synthesizes a response from these passages:
-generated_answer = synthesize_response(retrieved_passages, question)
+```bash
+git clone https://github.com/ParminderSinghGithub/SpectralReader.git
+cd SpectralReader
+cd app
+pip install -r requirements.txt
+```
 
-# 4. System outputs:
-print(generated_answer)
-# > "Sir Simon, the ghost haunting Canterville Chase, was once a nobleman condemned to roam the estate..."
+### Run the Application
+
+```bash
+streamlit run main.py
 ```
 
 ---
 
-## 📦 Updated requirements.txt
+## 🧪 Usage Guide
 
-```text
-# RAG-Specific Dependencies
-faiss-cpu==1.7.4             # Vector similarity search
-sentence-transformers==2.2.2 # Cross-encoders and embeddings
-langchain==0.0.340           # RAG pipeline orchestration
+1. **Upload** your literary PDF document via the web UI  
+2. System performs **semantic chunking** & **embeddings**  
+3. **Ask questions** such as:  
+   - **Characters**: “Who is the ghost in the story?”  
+   - **Themes**: “What are the main themes in Chapter 3?”  
+   - **Plot**: “Explain the significance of the climax scene”  
+4. Explore the **detailed, sourced insights** generated by the AI  
+
+---
+
+## 📜 Requirements
+
+See the complete dependency list in [requirements.txt](requirements.txt):
+
+
+---
+
+## 📜 License
+
+Released under the **MIT License** — free for academic, personal, and commercial use.  
+See [LICENSE](LICENSE) for details.
 ```
-
----
-
-## 🚀 What's Next?
-
-- **Interactive Demo**: Live question answering over classic novels.
-- **Chapter-Specific Analysis**: Deep dives into specific literary sections.
-- **Multi-Document RAG**: Combine multiple books for comparative analysis.
-
----
-
-> SpectralReader combines cutting-edge retrieval with generative AI to explore literature like never before.
-
