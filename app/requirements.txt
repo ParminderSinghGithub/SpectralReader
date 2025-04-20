@@ -1,0 +1,13 @@
+streamlit
+pdfplumber
+langchain
+langchain-text-splitters
+langchain-community
+transformers
+sentence-transformers
+torch
+faiss-cpu
+accelerate
+huggingface-hub
+numpy
+tqdm
