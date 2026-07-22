@@ -1,10 +1,14 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, File, UploadFile, status
 from io import BytesIO
 from app.models.schemas import DocumentUploadResponse, DocumentMetadataResponse, DeleteDocumentResponse
 from app.services.document_service import DocumentService
 from app.services.processing_service import ProcessingService
 from app.services.metadata_service import MetadataService
 from app.storage.document_store import DocumentStore
+from app.core.exceptions import DocumentNotFoundError, InvalidDocumentError, DocumentProcessingError
+from app.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -12,20 +16,16 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 async def upload_document(file: UploadFile = File(...)):
     """Accept a PDF document upload, extract text/chunks/metadata, and store in document store."""
     if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF documents are supported."
-        )
+        logger.warning(f"Rejected non-PDF upload attempt: '{file.filename}'")
+        raise InvalidDocumentError("Only PDF documents are supported.")
 
     content = await file.read()
     pdf_bytes = BytesIO(content)
 
     full_text, num_pages = DocumentService.extract_full_text(pdf_bytes)
     if not full_text.strip():
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Failed to extract text from provided PDF document."
-        )
+        logger.error(f"Text extraction yielded empty output for file '{file.filename}'")
+        raise DocumentProcessingError("Failed to extract text from provided PDF document.")
 
     chunks = ProcessingService.process_text(full_text)
     entities = MetadataService.extract_entities(full_text)
@@ -38,6 +38,8 @@ async def upload_document(file: UploadFile = File(...)):
         chunks=chunks,
         entities=entities
     )
+
+    logger.info(f"Successfully processed document '{file.filename}' (ID: {doc_data['document_id']}) with {num_pages} pages and {len(chunks)} chunks.")
 
     return DocumentUploadResponse(
         document_id=doc_data["document_id"],
@@ -54,10 +56,8 @@ def get_document_metadata(document_id: str):
     store = DocumentStore.get_instance()
     doc = store.get_document(document_id)
     if not doc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Document '{document_id}' not found."
-        )
+        logger.warning(f"Requested metadata for non-existent document ID '{document_id}'")
+        raise DocumentNotFoundError(document_id)
     return DocumentMetadataResponse(
         document_id=doc["document_id"],
         filename=doc["filename"],
@@ -73,10 +73,8 @@ def delete_document(document_id: str):
     store = DocumentStore.get_instance()
     deleted = store.delete_document(document_id)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Document '{document_id}' not found."
-        )
+        logger.warning(f"Attempted to delete non-existent document ID '{document_id}'")
+        raise DocumentNotFoundError(document_id)
     return DeleteDocumentResponse(
         document_id=document_id,
         message=f"Document '{document_id}' successfully removed from memory storage."

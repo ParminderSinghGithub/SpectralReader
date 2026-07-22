@@ -1,7 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 from app.models.schemas import SearchRequest, SearchResponse
 from app.storage.document_store import DocumentStore
 from app.services.metadata_service import MetadataService
+from app.core.exceptions import DocumentNotFoundError
+from app.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
@@ -11,15 +15,12 @@ def search_passages(request: SearchRequest):
     store = DocumentStore.get_instance()
     doc = store.get_document(request.document_id)
     if not doc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Document '{request.document_id}' not found."
-        )
+        logger.warning(f"Search requested for non-existent document ID '{request.document_id}'")
+        raise DocumentNotFoundError(request.document_id)
 
     chunks = doc["chunks"]
     top_k = request.top_k or 3
 
-    # Filter candidate passages using entity presence or text matching
     matching_passages = []
     for chunk in chunks:
         if any(entity in chunk for entity in MetadataService.extract_entities(chunk)):
@@ -29,6 +30,8 @@ def search_passages(request: SearchRequest):
         matching_passages = chunks[:top_k]
     else:
         matching_passages = matching_passages[:top_k]
+
+    logger.info(f"Retrieved {len(matching_passages)} passages for search query on document '{request.document_id}'")
 
     return SearchResponse(
         document_id=request.document_id,

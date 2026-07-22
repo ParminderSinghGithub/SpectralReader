@@ -47,3 +47,9 @@ class QAResponse(BaseModel):
 class DeleteDocumentResponse(BaseModel):
     document_id: str = Field(...)
     message: str = Field(...)
+
+class ErrorResponse(BaseModel):
+    status: str = Field("error", example="error")
+    message: str = Field(..., description="High-level error summary")
+    detail: Optional[str] = Field(None, description="Detailed error description")
+    status_code: int = Field(..., description="HTTP status code")
