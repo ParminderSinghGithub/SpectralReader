@@ -33,10 +33,39 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Shutting down SpectralReader API backend.")
 
+tags_metadata = [
+    {
+        "name": "Health",
+        "description": "Service health monitoring and model initialization status verification.",
+    },
+    {
+        "name": "Documents",
+        "description": "Document ingestion, text parsing, entity metadata extraction, and storage management.",
+    },
+    {
+        "name": "Search",
+        "description": "Candidate passage search and chunk filtering over document text.",
+    },
+    {
+        "name": "QA",
+        "description": "Generative question answering over document passages using FLAN-T5.",
+    },
+]
+
 app = FastAPI(
     title="SpectralReader Document Intelligence API",
-    description="REST API service for document extraction, metadata analysis, chunking, and question answering.",
+    description="""
+    ### 📖 SpectralReader Document Intelligence API
+    
+    Production-grade REST microservice providing:
+    - **PDF Ingestion & Text Parsing** (`/documents`)
+    - **Entity Metadata Extraction** (`/documents`)
+    - **Passage Retrieval & Search** (`/search`)
+    - **Generative Question Answering** (`/qa`)
+    - **Service Health Probes** (`/health`)
+    """,
     version="1.0.0",
+    openapi_tags=tags_metadata,
     lifespan=lifespan
 )
 
