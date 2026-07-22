@@ -6,13 +6,25 @@
 [![Docker](https://img.shields.io/badge/Docker-Multi--stage-2496ED.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**SpectralReader** is a production-grade Document Intelligence microservice and web application. It processes PDF documents, extracts text and structural sections, identifies key entities, retrieves candidate passages, and executes context-aware generative question answering powered by FLAN-T5 models.
+**SpectralReader** is an AI-powered Document Intelligence application designed for document understanding, PDF text extraction, entity metadata recognition, passage retrieval, and context-aware question answering. Built with a modular Python backend powered by **FastAPI** and **FLAN-T5**, it decouples machine learning inference and document processing from its interactive **Streamlit** user interface.
+
+---
+
+## 🎯 Why SpectralReader?
+
+Unstructured text trapped in PDF documents—such as research papers, legal contracts, technical manuals, and corporate reports—is difficult to search and analyze efficiently. **SpectralReader** addresses this challenge by providing a structured Document Intelligence API and interactive client that extracts structural content, identifies key entities, and answers natural language questions over document passages.
+
+### Key Engineering Concepts Demonstrated:
+- **Clean Microservice Architecture**: Complete separation of UI presentation from backend logic, data parsing, and model execution.
+- **RESTful API Design**: Single source of truth API built with FastAPI, Pydantic validation, and OpenAPI specification.
+- **ML Dependency Isolation**: Decoupled model lifecycle management with fast, deterministic unit/integration testing via dependency mocking.
+- **Deployment-Ready Engineering**: Environment-driven configurations, structured logging, multi-stage Docker builds, and cloud deployment guides for Render and Streamlit Cloud.
 
 ---
 
 ## 🏛️ System Architecture
 
-SpectralReader is designed around a decoupled client-service architecture. A **FastAPI REST API** serves as the single source of truth for business logic and ML inference, while a **Streamlit Web Application** functions as the official user interface.
+SpectralReader uses a decoupled client-service architecture. The **FastAPI REST API** serves as the primary engine for document parsing, entity extraction, and FLAN-T5 generation, while the **Streamlit Web Application** functions strictly as an API client.
 
 ```mermaid
 graph TD
@@ -36,45 +48,38 @@ graph TD
 
 ## 💡 Architecture Decisions
 
-The architectural design of SpectralReader follows strict production microservice principles:
-
-1. **FastAPI as Core Backend**:
-   FastAPI was chosen for the backend due to its high performance, automatic request/response validation using Pydantic, built-in OpenAPI/Swagger documentation generation, and asynchronous request handling capabilities.
-2. **Streamlit Retained as Official Frontend Client**:
-   Streamlit provides an intuitive, responsive interface for document uploads and interactive analysis without adding frontend build complexity (e.g., Node/React tooling).
-3. **Backend as Single Source of Truth**:
-   All business logic (PDF parsing, text cleaning, chunking, entity extraction, model pre-warming, and QA generation) resides strictly within the backend services. The UI retains zero business or ML processing logic.
-4. **Exclusive REST API Communication**:
-   The Streamlit client communicates with the backend exclusively over HTTP REST endpoints. If the backend API service is offline, Streamlit displays an explicit notification prompting the operator to start the server rather than silently running local in-process fallback calls.
-5. **Decoupled External Application Integration**:
-   By exposing every capability over clean REST endpoints, external systems (mobile apps, enterprise workflows, CLI tools, automated batch pipelines) can consume the Document Intelligence microservice independently of the Streamlit frontend.
+- **FastAPI as Core Backend**: Chosen for high performance, automatic Pydantic request/response validation, native OpenAPI/Swagger generation, and clean asynchronous request routing.
+- **Streamlit as Official Frontend**: Streamlit provides a responsive interface for document uploads and interactive analysis without adding complex frontend JavaScript build pipelines.
+- **Backend as Single Source of Truth**: All PDF parsing, text cleaning, chunking, entity extraction, model loading, and QA generation reside strictly within backend services.
+- **Exclusive REST API Communication**: The Streamlit client communicates with the backend exclusively over HTTP REST endpoints. If the backend is offline, Streamlit prompts the operator to start the server rather than silently running local in-process fallbacks.
+- **External System Integration**: Decoupling the business logic into REST endpoints enables external systems (mobile apps, CLI tools, automated batch pipelines) to consume the service independently of the Streamlit client.
 
 ---
 
 ## ✨ Features
 
-- 📄 **PDF Document Parsing**: Fast text extraction and page parsing via `pdfplumber`.
-- 🧩 **Semantic Text Chunking**: Boundary-aware document splitting with configurable chunk size and overlap limits.
-- 🏷️ **Entity Metadata Extraction**: Pattern-based entity recognition and frequency thresholding.
+- 📄 **PDF Text Extraction**: Page-level text parsing using `pdfplumber`.
+- 🧩 **Semantic Text Chunking**: Boundary-aware document splitting with configurable chunk sizes and overlap limits.
+- 🏷️ **Entity Metadata Recognition**: Pattern-based entity extraction and frequency analysis.
 - 🔍 **Passage Retrieval & Search**: Candidate passage filtering across document chunks.
-- 🧠 **Generative Question Answering**: Context-conditioned answer generation powered by FLAN-T5-Large.
-- ⚡ **REST API Microservice**: Standardized JSON response payloads, Pydantic schemas, and global exception handling.
+- 🧠 **Context-Aware Question Answering**: Generative answer synthesis using FLAN-T5-Large.
+- ⚡ **REST Microservice**: Standardized JSON responses, Pydantic data validation, and global exception handling.
 - 📊 **Health Probes & Metrics**: `/health` endpoint and `X-Process-Time` request timing headers.
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Component / Tool | Technology Used |
+| Category | Technology Used | Description |
 | :--- | :--- | :--- |
-| **API Framework** | REST Endpoints, OpenAPI, Routing | FastAPI, Pydantic |
-| **User Interface** | Web App Client | Streamlit |
-| **Generative LLM** | Question Answering | FLAN-T5-Large (`google/flan-t5-large`) |
-| **Embeddings & Reranking** | Vector Tools (Pre-configured) | MPNet Base, MiniLM CrossEncoder |
-| **Document Processing** | PDF Parsing & Text Chunking | `pdfplumber`, `langchain-text-splitters` |
-| **Deep Learning** | Model Execution & GPU/CPU Allocation | PyTorch, Hugging Face Transformers |
-| **Containerization** | Multi-stage Docker Builds | Docker, Docker Compose |
-| **Testing** | Automated Unit & Integration Suite | `pytest`, `pytest-cov`, `httpx` |
+| **Backend Framework** | FastAPI | REST API routing and OpenAPI generation |
+| **Frontend Interface** | Streamlit | Interactive web user interface |
+| **NLP & Language Models** | FLAN-T5-Large | Seq2Seq generative question answering |
+| **Document Processing** | `pdfplumber`, LangChain | PDF text extraction and recursive text splitting |
+| **ML Framework** | PyTorch, Hugging Face | Model inference and execution |
+| **API & Data Validation**| Pydantic, Python-Multipart | Schema validation and file upload handling |
+| **Containerization** | Docker, Docker Compose | Multi-stage build containerization |
+| **Testing Suite** | Pytest, Pytest-Cov, HTTPX | Automated unit and integration testing |
 
 ---
 
@@ -82,37 +87,23 @@ The architectural design of SpectralReader follows strict production microservic
 
 ```
 SpectralReader/
-├── Dockerfile                  # Multi-stage Docker build file (Render ready)
-├── .dockerignore               # Container context exclusions
+├── Dockerfile                  # Multi-stage Docker build container
+├── .dockerignore               # Docker context exclusion rules
 ├── docker-compose.yml          # Local container orchestration file
 ├── .env.example                # Deployment environment variable template
 ├── LICENSE                     # MIT License
-├── README.md                   # Project documentation
+├── README.md                   # Platform documentation
 ├── app/                        # Application source code
 │   ├── main_api.py             # FastAPI backend entry point
 │   ├── main.py                 # Streamlit frontend client entry point
 │   ├── requirements.txt        # Python dependency manifest
 │   ├── api/                    # REST API Endpoint Routers
-│   │   ├── health.py           # GET /health
-│   │   ├── documents.py        # POST, GET, DELETE /documents
-│   │   ├── search.py           # POST /search
-│   │   └── qa.py               # POST /qa
-│   ├── core/                   # Infrastructure Core
-│   │   ├── config.py           # Deployment settings & constants
-│   │   ├── exceptions.py       # Custom domain exceptions
-│   │   └── logger.py           # Structured logger builder
-│   ├── models/                 # Pydantic Schemas
-│   │   └── schemas.py          # API request & response schemas
-│   ├── services/               # Modular Business Logic
-│   │   ├── document_service.py # PDF extraction
-│   │   ├── processing_service.py # Text chunking
-│   │   ├── metadata_service.py # Entity extraction
-│   │   ├── model_service.py    # Singleton model container
-│   │   └── qa_service.py       # FLAN-T5 QA engine
-│   └── storage/                # Storage Tier
-│       └── document_store.py   # In-memory document storage
-└── tests/                      # Automated Testing Suite
-    ├── conftest.py             # Pytest fixtures & ML model mocks
+│   ├── core/                   # Infrastructure Core (config, logger, exceptions)
+│   ├── models/                 # Pydantic Schemas (request & response models)
+│   ├── services/               # Backend Business Logic (document, processing, metadata, model, qa)
+│   └── storage/                # In-memory document storage
+└── tests/                      # Testing Suite
+    ├── conftest.py             # Shared pytest fixtures & ML mocks
     ├── unit/                   # Service unit tests
     └── api/                    # API integration tests
 ```
@@ -218,13 +209,13 @@ Probes health status automatically via container health checks on `http://localh
 
 ---
 
-## 📡 REST API Reference & cURL Examples
+## 📡 REST API Reference & Example Requests
 
 ### 1. Health Check
 ```bash
 curl -X GET "http://localhost:8000/health"
 ```
-**Response**:
+**Example Response**:
 ```json
 {
   "status": "ok",
@@ -239,21 +230,21 @@ curl -X GET "http://localhost:8000/health"
 curl -X POST "http://localhost:8000/documents" \
   -F "file=@/path/to/document.pdf"
 ```
-**Response**:
+**Example Response**:
 ```json
 {
-  "document_id": "a8b076a5-68ac-4908-90b8-034996d92155",
-  "filename": "document.pdf",
-  "num_pages": 12,
-  "num_chunks": 8,
-  "entities": ["Arthur Vance", "Elizabeth Swann"],
-  "created_at": "2026-07-22T15:45:00Z"
+  "document_id": "<document_id>",
+  "filename": "sample_document.pdf",
+  "num_pages": "<num_pages>",
+  "num_chunks": "<num_chunks>",
+  "entities": ["<entity_1>", "<entity_2>"],
+  "created_at": "<iso_timestamp>"
 }
 ```
 
 ### 3. Get Document Metadata
 ```bash
-curl -X GET "http://localhost:8000/documents/a8b076a5-68ac-4908-90b8-034996d92155"
+curl -X GET "http://localhost:8000/documents/<document_id>"
 ```
 
 ### 4. Search Candidate Passages
@@ -261,8 +252,8 @@ curl -X GET "http://localhost:8000/documents/a8b076a5-68ac-4908-90b8-034996d9215
 curl -X POST "http://localhost:8000/search" \
   -H "Content-Type: application/json" \
   -d '{
-    "document_id": "a8b076a5-68ac-4908-90b8-034996d92155",
-    "query": "What are the key findings?",
+    "document_id": "<document_id>",
+    "query": "What are the primary findings?",
     "top_k": 3
   }'
 ```
@@ -272,24 +263,24 @@ curl -X POST "http://localhost:8000/search" \
 curl -X POST "http://localhost:8000/qa" \
   -H "Content-Type: application/json" \
   -d '{
-    "document_id": "a8b076a5-68ac-4908-90b8-034996d92155",
+    "document_id": "<document_id>",
     "question": "What is the primary conclusion of the report?"
   }'
 ```
-**Response**:
+**Example Response**:
 ```json
 {
-  "document_id": "a8b076a5-68ac-4908-90b8-034996d92155",
+  "document_id": "<document_id>",
   "question": "What is the primary conclusion of the report?",
-  "answer": "The report concludes that adaptive streaming significantly improves throughput.",
-  "retrieved_context": ["Excerpt passage text..."],
-  "processing_time_ms": 142.5
+  "answer": "<generated_answer_text>",
+  "retrieved_context": ["<context_passage_1>", "<context_passage_2>"],
+  "processing_time_ms": "<processing_time_ms>"
 }
 ```
 
 ### 6. Delete Document
 ```bash
-curl -X DELETE "http://localhost:8000/documents/a8b076a5-68ac-4908-90b8-034996d92155"
+curl -X DELETE "http://localhost:8000/documents/<document_id>"
 ```
 
 ---
@@ -301,10 +292,21 @@ Execute the test suite with coverage reporting:
 pytest tests/ -v --cov=app --cov-report=term-missing
 ```
 
-### Test Suite Highlights
-- **23 Test Cases**: 100% pass rate in < 1 second.
-- **Fast & Deterministic**: Heavy ML dependencies are mocked using `pytest` fixtures.
-- **Full Coverage**: 100% statement coverage across core REST API routes and domain exception paths.
+### Testing Strategy
+- **Service & Router Verification**: Core document services, storage handlers, schema validation, and REST API endpoints are covered by unit and integration tests.
+- **ML Dependency Isolation**: Heavy model downloads and inference runtimes are mocked using `pytest` fixtures, allowing the test suite to execute deterministically in under one second.
+
+---
+
+## 🗺️ Roadmap & Future Enhancements
+
+- 🗄️ **Persistent Document Storage**: Transition from in-memory storage to PostgreSQL or SQLite.
+- 🔍 **Vector Database Integration**: Store embeddings in FAISS or Qdrant for semantic similarity retrieval.
+- 📑 **OCR Integration**: Support scanned PDF documents using Tesseract OCR or pdf2image.
+- 🔒 **Authentication & Authorization**: Add API key management and JWT user authentication.
+- 📦 **Cloud Object Storage**: Store uploaded PDF binaries in AWS S3 or Google Cloud Storage.
+- 📚 **Multi-Document Retrieval**: Enable query execution across multiple documents simultaneously.
+- ⚡ **Background Processing**: Offload heavy document ingestion tasks to Celery / Redis workers.
 
 ---
 
