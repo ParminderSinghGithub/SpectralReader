@@ -11,3 +11,8 @@ accelerate
 huggingface-hub
 numpy
 tqdm
+fastapi
+uvicorn
+python-multipart
+pydantic
+requests

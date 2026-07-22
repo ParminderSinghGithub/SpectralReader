@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Settings:
+    API_BASE_URL: str = "http://localhost:8000"
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
     GENERATIVE_MODEL_NAME: str = "google/flan-t5-large"
     RERANKER_MODEL_NAME: str = "cross-encoder/ms-marco-MiniLM-L-12-v2"

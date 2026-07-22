@@ -1,15 +1,12 @@
 import os
 import sys
+import requests
 import streamlit as st
 
-# Ensure repository root is in sys.path for app imports
+# Ensure repository root is on sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.services.model_service import ModelService
-from app.services.document_service import DocumentService
-from app.services.processing_service import ProcessingService
-from app.services.metadata_service import MetadataService
-from app.services.qa_service import QAService
+from app.core.config import settings
 
 # --- Configure Page ---
 st.set_page_config(
@@ -124,14 +121,6 @@ h3 {
     background: var(--dark) !important;
     border-right: 1px solid #1e293b;
 }
-[data-testid="stSidebar"] .st-emotion-cache-16txtl3 {
-    padding: 2rem 1.5rem;
-}
-
-/* Progress indicators */
-.stSpinner > div {
-    border-color: var(--primary) transparent transparent transparent !important;
-}
 
 /* Custom cards */
 .custom-card {
@@ -145,23 +134,35 @@ h3 {
 """, unsafe_allow_html=True)
 
 
-# --- Main UI ---
+def check_api_health() -> bool:
+    """Verify connectivity to backend FastAPI REST service."""
+    try:
+        res = requests.get(f"{settings.API_BASE_URL}/health", timeout=3)
+        return res.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+
+
 def main():
     # App Header
     st.markdown("""
     <div class="header">
         <h1>📖 SpectralReader</h1>
         <p class="stMarkdown" style="color: #94a3b8; font-size: 1.1rem;">
-        Literary Analysis Engine for Character and Theme Exploration
+        Document Intelligence & Literary Analysis Microservice Client
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Request models directly from backend ModelService
-    models = ModelService.get_model_container()
-    if models is None:
-        st.error("Model loading failed.")
-        return
+    # API Backend Health Check
+    if not check_api_health():
+        st.error("⚠️ Backend API Service Unavailable")
+        st.warning(
+            f"The Streamlit client communicates exclusively via the FastAPI REST backend at `{settings.API_BASE_URL}`.\n\n"
+            "Please start the backend service using the command below before using the interface:"
+        )
+        st.code("uvicorn app.main_api:app --reload --port 8000")
+        st.stop()
 
     # Main Columns
     col1, col2 = st.columns([2, 1], gap="large")
@@ -169,7 +170,7 @@ def main():
     with col1:
         # File Upload Section
         with st.container(height=400):
-            st.subheader("1. Upload Literature")
+            st.subheader("1. Upload Document")
             pdf_file = st.file_uploader(
                 "Drag PDF here",
                 type="pdf",
@@ -177,29 +178,29 @@ def main():
                 help="Supports novels, plays, and short stories"
             )
             
-            if pdf_file:
-                st.success("File uploaded successfully")
-                
-                # Document Service preview extraction
-                preview_text = DocumentService.extract_preview(pdf_file, max_pages=3)
-                with st.expander("Document Preview", expanded=True):
-                    st.caption("First page preview")
-                    st.text(preview_text[:1000] + "...")
-                
-                # Full document extraction & processing
-                full_text, num_pages = DocumentService.extract_full_text(pdf_file)
-                chunks = ProcessingService.process_text(full_text)
-                detected_characters = MetadataService.extract_character_info(full_text)
-                
-                st.session_state['docs'] = chunks
-                st.session_state['processed'] = True
-                st.session_state['num_pages'] = num_pages
-                st.session_state['num_characters'] = len(detected_characters)
+            if pdf_file and ('uploaded_filename' not in st.session_state or st.session_state['uploaded_filename'] != pdf_file.name):
+                with st.spinner("Uploading and processing document via REST API..."):
+                    files = {"file": (pdf_file.name, pdf_file.getvalue(), "application/pdf")}
+                    try:
+                        res = requests.post(f"{settings.API_BASE_URL}/documents", files=files, timeout=60)
+                        if res.status_code == 201:
+                            doc_data = res.json()
+                            st.session_state['doc_id'] = doc_data['document_id']
+                            st.session_state['num_pages'] = doc_data['num_pages']
+                            st.session_state['num_chunks'] = doc_data['num_chunks']
+                            st.session_state['num_characters'] = len(doc_data['characters_identified'])
+                            st.session_state['uploaded_filename'] = pdf_file.name
+                            st.session_state['processed'] = True
+                            st.success(f"Document '{pdf_file.name}' processed successfully via REST API.")
+                        else:
+                            st.error(f"Upload failed: {res.text}")
+                    except Exception as e:
+                        st.error(f"Failed to communicate with API server: {str(e)}")
 
         # Analysis Section
-        if 'processed' in st.session_state:
+        if 'processed' in st.session_state and st.session_state.get('processed'):
             st.divider()
-            st.subheader("2. Literary Insights")
+            st.subheader("2. Literary & Document Insights")
             
             query = st.text_input(
                 "Ask about characters, themes, or plot",
@@ -208,28 +209,37 @@ def main():
             )
             
             if query:
-                with st.status("Analyzing text...", expanded=True) as status:
-                    st.write("🔍 Identifying key passages...")
-                    st.write("📖 Contextual analysis...")
-                    st.write("✨ Generating insights...")
-                    answer = QAService.answer_question(
-                        query,
-                        st.session_state['docs'],
-                        models.tokenizer,
-                        models.qa_model
-                    )
-                    status.update(label="Analysis complete", state="complete")
-                
-                with st.container():
-                    st.subheader("Insights")
-                    st.markdown(f"""
-                    <div class="custom-card">
-                        <h3>{query.strip('?').capitalize()}</h3>
-                        <p style="color: #94a3b8;">
-                        {answer}
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                with st.status("Querying REST API...", expanded=True) as status:
+                    st.write("🔍 Requesting QA service endpoint...")
+                    try:
+                        payload = {
+                            "document_id": st.session_state['doc_id'],
+                            "question": query
+                        }
+                        res = requests.post(f"{settings.API_BASE_URL}/qa", json=payload, timeout=120)
+                        if res.status_code == 200:
+                            qa_resp = res.json()
+                            answer = qa_resp['answer']
+                            proc_time = qa_resp['processing_time_ms']
+                            status.update(label=f"Analysis complete ({proc_time} ms)", state="complete")
+                            
+                            with st.container():
+                                st.subheader("Insights")
+                                st.markdown(f"""
+                                <div class="custom-card">
+                                    <h3>{query.strip('?').capitalize()}</h3>
+                                    <p style="color: #94a3b8;">
+                                    {answer}
+                                    </p>
+                                    <span style="font-size: 0.8rem; color: #64748b;">API Processing Time: {proc_time} ms</span>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        else:
+                            status.update(label="API Error", state="error")
+                            st.error(f"QA Request failed: {res.text}")
+                    except Exception as e:
+                        status.update(label="Connection Error", state="error")
+                        st.error(f"API communication error: {str(e)}")
 
     with col2:
         # System Dashboard
@@ -240,11 +250,11 @@ def main():
                 <div class="custom-card">
                     <div style="display: flex; justify-content: space-between;">
                         <span>Processing Status</span>
-                        <span class="stSuccess" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Ready</span>
+                        <span class="stSuccess" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">API Connected</span>
                     </div>
                     <div style="margin-top: 1.5rem;">
                         <p style="color: #94a3b8; margin: 0.5rem 0;">📄 Pages: {st.session_state.get('num_pages', '—')}</p>
-                        <p style="color: #94a3b8; margin: 0.5rem 0;">🔗 Connections Mapped: 142</p>
+                        <p style="color: #94a3b8; margin: 0.5rem 0;">🧩 Chunks Generated: {st.session_state.get('num_chunks', '—')}</p>
                         <p style="color: #94a3b8; margin: 0.5rem 0;">👥 Characters Identified: {st.session_state.get('num_characters', '—')}</p>
                     </div>
                 </div>
@@ -258,7 +268,7 @@ def main():
                     </div>
                     <div style="margin-top: 1.5rem;">
                         <p style="color: #94a3b8; margin: 0.5rem 0;">📄 Pages: —</p>
-                        <p style="color: #94a3b8; margin: 0.5rem 0;">🔗 Connections Mapped: —</p>
+                        <p style="color: #94a3b8; margin: 0.5rem 0;">🧩 Chunks Generated: —</p>
                         <p style="color: #94a3b8; margin: 0.5rem 0;">👥 Characters Identified: —</p>
                     </div>
                 </div>
@@ -268,11 +278,11 @@ def main():
             
             st.markdown("""
             <div class="custom-card">
-                <h4>Model Architecture</h4>
+                <h4>Microservice Stack</h4>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 1rem;">
+                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">FastAPI</span>
+                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Pydantic</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">FLAN-T5</span>
-                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">MPNet</span>
-                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">FAISS</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">LangChain</span>
                 </div>
             </div>
@@ -291,9 +301,9 @@ def main():
         <div class="custom-card" style="margin-bottom: 1rem;">
             <h4>📌 Quick Tips</h4>
             <ul style="color: #94a3b8; padding-left: 1.2rem;">
-                <li>Ask about character relationships</li>
-                <li>Explore symbolic meanings</li>
-                <li>Compare different story areas</li>
+                <li>Upload PDF to register ID</li>
+                <li>Queries route via REST API</li>
+                <li>View status in monitor card</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -302,7 +312,7 @@ def main():
     st.divider()
     st.markdown("""
     <div style="text-align: center; color: #64748b; padding: 1.5rem 0; font-size: 0.9rem;">
-        SpectralReader
+        SpectralReader Document Intelligence API Client
     </div>
     """, unsafe_allow_html=True)
 
