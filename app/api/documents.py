@@ -10,7 +10,7 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 
 @router.post("", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(file: UploadFile = File(...)):
-    """Accept a PDF upload, process text/chunks/metadata, and store in document store."""
+    """Accept a PDF document upload, extract text/chunks/metadata, and store in document store."""
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -28,7 +28,7 @@ async def upload_document(file: UploadFile = File(...)):
         )
 
     chunks = ProcessingService.process_text(full_text)
-    characters = MetadataService.extract_character_info(full_text)
+    entities = MetadataService.extract_entities(full_text)
 
     store = DocumentStore.get_instance()
     doc_data = store.add_document(
@@ -36,7 +36,7 @@ async def upload_document(file: UploadFile = File(...)):
         full_text=full_text,
         num_pages=num_pages,
         chunks=chunks,
-        characters=characters
+        entities=entities
     )
 
     return DocumentUploadResponse(
@@ -44,7 +44,7 @@ async def upload_document(file: UploadFile = File(...)):
         filename=doc_data["filename"],
         num_pages=doc_data["num_pages"],
         num_chunks=doc_data["num_chunks"],
-        characters_identified=doc_data["characters"],
+        entities=doc_data["entities"],
         created_at=doc_data["created_at"]
     )
 
@@ -63,7 +63,7 @@ def get_document_metadata(document_id: str):
         filename=doc["filename"],
         num_pages=doc["num_pages"],
         num_chunks=doc["num_chunks"],
-        characters_identified=doc["characters"],
+        entities=doc.get("entities", doc.get("characters", [])),
         created_at=doc["created_at"]
     )
 

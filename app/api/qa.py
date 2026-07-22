@@ -36,10 +36,10 @@ def answer_question(request: QARequest):
     end_time = time.perf_counter()
     processing_time_ms = round((end_time - start_time) * 1000, 2)
 
-    # Collect retrieved passages used in context
+    # Collect passages used in context
     retrieved_passages = []
     for chunk in doc["chunks"]:
-        if any(char in chunk for char in MetadataService.extract_character_info(chunk)):
+        if any(entity in chunk for entity in MetadataService.extract_entities(chunk)):
             retrieved_passages.append(chunk)
     retrieved_context = retrieved_passages[:3] if retrieved_passages else doc["chunks"][:3]
 

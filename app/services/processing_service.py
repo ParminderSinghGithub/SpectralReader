@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 class ProcessingService:
     @staticmethod
     def process_text(text: str) -> List[str]:
-        """Clean document text and split by chapter/act/scene boundaries or character splitter fallback."""
+        """Clean document text and split by section boundaries or recursive character splitter fallback."""
         text = re.sub(r'\s+', ' ', text)
         text = re.sub(r'-\s+', '', text)
         chapter_splits = re.split(r'\n\s*(CHAPTER|ACT|SCENE)\s+[IVXLCDM]+\s*\n', text)

@@ -9,7 +9,7 @@ class DocumentStore:
     """In-memory document storage singleton.
     
     Temporary storage implementation for holding processed document text,
-    chunk representations, and metadata within process memory.
+    chunk representations, and extracted metadata within process memory.
     """
     _instance: Optional['DocumentStore'] = None
     _documents: Dict[str, dict] = {}
@@ -26,7 +26,7 @@ class DocumentStore:
         full_text: str,
         num_pages: int,
         chunks: List[str],
-        characters: List[str]
+        entities: List[str]
     ) -> dict:
         doc_id = str(uuid.uuid4())
         created_at = datetime.now(timezone.utc).isoformat()
@@ -37,7 +37,8 @@ class DocumentStore:
             "num_pages": num_pages,
             "chunks": chunks,
             "num_chunks": len(chunks),
-            "characters": characters,
+            "entities": entities,
+            "characters": entities,  # Backward compatibility key
             "created_at": created_at
         }
         self._documents[doc_id] = doc_data

@@ -19,10 +19,10 @@ def search_passages(request: SearchRequest):
     chunks = doc["chunks"]
     top_k = request.top_k or 3
 
-    # Filter passages using character presence or text matching logic
+    # Filter candidate passages using entity presence or text matching
     matching_passages = []
     for chunk in chunks:
-        if any(char in chunk for char in MetadataService.extract_character_info(chunk)):
+        if any(entity in chunk for entity in MetadataService.extract_entities(chunk)):
             matching_passages.append(chunk)
 
     if not matching_passages:

@@ -12,7 +12,7 @@ class DocumentUploadResponse(BaseModel):
     filename: str = Field(..., description="Original filename")
     num_pages: int = Field(..., description="Total pages extracted")
     num_chunks: int = Field(..., description="Total chunks generated")
-    characters_identified: List[str] = Field(..., description="Extracted character metadata")
+    entities: List[str] = Field(..., description="Extracted document entities")
     created_at: str = Field(..., description="ISO creation timestamp")
 
 class DocumentMetadataResponse(BaseModel):
@@ -20,7 +20,7 @@ class DocumentMetadataResponse(BaseModel):
     filename: str = Field(..., description="Original filename")
     num_pages: int = Field(..., description="Total pages extracted")
     num_chunks: int = Field(..., description="Total chunks generated")
-    characters_identified: List[str] = Field(..., description="Extracted character metadata")
+    entities: List[str] = Field(..., description="Extracted document entities")
     created_at: str = Field(..., description="ISO creation timestamp")
 
 class SearchRequest(BaseModel):
@@ -31,7 +31,7 @@ class SearchRequest(BaseModel):
 class SearchResponse(BaseModel):
     document_id: str = Field(...)
     query: str = Field(...)
-    results: List[str] = Field(..., description="Matching document chunks")
+    results: List[str] = Field(..., description="Matching document passages")
 
 class QARequest(BaseModel):
     document_id: str = Field(..., description="ID of target document")

@@ -10,7 +10,7 @@ from app.core.config import settings
 
 # --- Configure Page ---
 st.set_page_config(
-    page_title="SpectralReader",
+    page_title="SpectralReader - Document Intelligence Engine",
     page_icon="📖",
     layout="wide"
 )
@@ -149,7 +149,7 @@ def main():
     <div class="header">
         <h1>📖 SpectralReader</h1>
         <p class="stMarkdown" style="color: #94a3b8; font-size: 1.1rem;">
-        Document Intelligence & Literary Analysis Microservice Client
+        Document Intelligence Engine for Analysis & Information Extraction
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -175,7 +175,7 @@ def main():
                 "Drag PDF here",
                 type="pdf",
                 label_visibility="collapsed",
-                help="Supports novels, plays, and short stories"
+                help="Supports PDF reports, research papers, contracts, manuals, and technical documents"
             )
             
             if pdf_file and ('uploaded_filename' not in st.session_state or st.session_state['uploaded_filename'] != pdf_file.name):
@@ -188,7 +188,7 @@ def main():
                             st.session_state['doc_id'] = doc_data['document_id']
                             st.session_state['num_pages'] = doc_data['num_pages']
                             st.session_state['num_chunks'] = doc_data['num_chunks']
-                            st.session_state['num_characters'] = len(doc_data['characters_identified'])
+                            st.session_state['num_entities'] = len(doc_data['entities'])
                             st.session_state['uploaded_filename'] = pdf_file.name
                             st.session_state['processed'] = True
                             st.success(f"Document '{pdf_file.name}' processed successfully via REST API.")
@@ -200,11 +200,11 @@ def main():
         # Analysis Section
         if 'processed' in st.session_state and st.session_state.get('processed'):
             st.divider()
-            st.subheader("2. Literary & Document Insights")
+            st.subheader("2. Document Insights")
             
             query = st.text_input(
-                "Ask about characters, themes, or plot",
-                placeholder="Who is the main protagonist?",
+                "Ask any question about the document",
+                placeholder="What are the key findings or details?",
                 key="query_input"
             )
             
@@ -255,7 +255,7 @@ def main():
                     <div style="margin-top: 1.5rem;">
                         <p style="color: #94a3b8; margin: 0.5rem 0;">📄 Pages: {st.session_state.get('num_pages', '—')}</p>
                         <p style="color: #94a3b8; margin: 0.5rem 0;">🧩 Chunks Generated: {st.session_state.get('num_chunks', '—')}</p>
-                        <p style="color: #94a3b8; margin: 0.5rem 0;">👥 Characters Identified: {st.session_state.get('num_characters', '—')}</p>
+                        <p style="color: #94a3b8; margin: 0.5rem 0;">🏷️ Entities Identified: {st.session_state.get('num_entities', '—')}</p>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -269,7 +269,7 @@ def main():
                     <div style="margin-top: 1.5rem;">
                         <p style="color: #94a3b8; margin: 0.5rem 0;">📄 Pages: —</p>
                         <p style="color: #94a3b8; margin: 0.5rem 0;">🧩 Chunks Generated: —</p>
-                        <p style="color: #94a3b8; margin: 0.5rem 0;">👥 Characters Identified: —</p>
+                        <p style="color: #94a3b8; margin: 0.5rem 0;">🏷️ Entities Identified: —</p>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -278,7 +278,7 @@ def main():
             
             st.markdown("""
             <div class="custom-card">
-                <h4>Microservice Stack</h4>
+                <h4>Document Intelligence Stack</h4>
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 1rem;">
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">FastAPI</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Pydantic</span>
@@ -293,7 +293,7 @@ def main():
         st.markdown("""
         <div style="text-align: center; margin-bottom: 2rem;">
             <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔮</div>
-            <h3 style="margin: 0; color: var(--primary);">Analysis Guide</h3>
+            <h3 style="margin: 0; color: var(--primary);">Document Guide</h3>
         </div>
         """, unsafe_allow_html=True)
         
@@ -301,9 +301,9 @@ def main():
         <div class="custom-card" style="margin-bottom: 1rem;">
             <h4>📌 Quick Tips</h4>
             <ul style="color: #94a3b8; padding-left: 1.2rem;">
-                <li>Upload PDF to register ID</li>
-                <li>Queries route via REST API</li>
-                <li>View status in monitor card</li>
+                <li>Upload PDF to extract entities</li>
+                <li>Ask questions via REST API</li>
+                <li>Analyze technical details</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)

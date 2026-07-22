@@ -7,7 +7,7 @@ logger = get_logger(__name__)
 class DocumentService:
     @staticmethod
     def extract_preview(pdf_file, max_pages: int = 3) -> str:
-        """Extract text from the first few pages of a PDF file for preview."""
+        """Extract text from the first few pages of a document for preview."""
         text = ""
         with pdfplumber.open(pdf_file) as pdf:
             for page in pdf.pages[:max_pages]:
@@ -18,7 +18,7 @@ class DocumentService:
 
     @staticmethod
     def extract_full_text(pdf_file) -> Tuple[str, int]:
-        """Extract full text from a PDF file along with total page count."""
+        """Extract full text from a document along with total page count."""
         full_text = ""
         with pdfplumber.open(pdf_file) as pdf:
             num_pages = len(pdf.pages)
