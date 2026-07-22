@@ -1,4 +1,4 @@
-```markdown
+
 # 📖 SpectralReader - Advanced Literary Analysis Engine
 
 [Live Demo 🚀](https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app/)
@@ -118,7 +118,7 @@ streamlit run main.py
 
 ## 📜 Requirements
 
-See the complete dependency list in [requirements.txt](requirements.txt):
+See the complete dependency list in [requirements.txt](app/requirements.txt):
 
 
 ---
