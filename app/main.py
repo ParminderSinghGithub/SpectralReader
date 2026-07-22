@@ -1,13 +1,15 @@
+import os
+import sys
 import streamlit as st
-import pdfplumber
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
-from sentence_transformers import CrossEncoder
-import torch
-import re
-from typing import List, Tuple, Optional
+
+# Ensure repository root is in sys.path for app imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from app.services.model_service import ModelService
+from app.services.document_service import DocumentService
+from app.services.processing_service import ProcessingService
+from app.services.metadata_service import MetadataService
+from app.services.qa_service import QAService
 
 # --- Configure Page ---
 st.set_page_config(
@@ -142,74 +144,6 @@ h3 {
 </style>
 """, unsafe_allow_html=True)
 
-# --- Model Loading ---
-@st.cache_resource
-def load_models():
-    try:
-        embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-            model_kwargs={'device': 'cpu'}
-        )
-        tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-large")
-        qa_model = AutoModelForSeq2SeqLM.from_pretrained(
-            "google/flan-t5-large",
-            device_map="auto" if torch.cuda.is_available() else None,
-            torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
-        )
-        reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-12-v2')
-        return embeddings, tokenizer, qa_model, reranker
-    except Exception as e:
-        st.error(f"Model loading failed: {str(e)}")
-        return None, None, None, None
-
-# --- Helpers ---
-def process_literary_text(text: str) -> List[str]:
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'-\s+', '', text)
-    chapter_splits = re.split(r'\n\s*(CHAPTER|ACT|SCENE)\s+[IVXLCDM]+\s*\n', text)
-    if len(chapter_splits) > 1:
-        return [chap for chap in chapter_splits if len(chap.strip()) > 100]
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1500,
-        chunk_overlap=300,
-        separators=["\n\n", "\n", "(?<=\. )", " ", ""]
-    )
-    return splitter.split_text(text)
-
-def extract_character_info(text: str) -> List[str]:
-    characters = set()
-    matches = re.finditer(r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})', text)
-    for match in matches:
-        name = match.group(1)
-        if text.count(name) > 2 and len(name) > 3:
-            characters.add(name)
-    return sorted(characters)
-
-def answer_character_question(question: str, docs: List[str], tokenizer, model) -> str:
-    character_passages = []
-    for doc in docs:
-        if any(char in doc for char in extract_character_info(doc)):
-            character_passages.append(doc)
-    if not character_passages:
-        return "I couldn't find character information in the document."
-    context = "\n".join(character_passages[:3])
-    prompt = f"""Analyze this literary excerpt and answer the question about characters.
-    
-    Excerpt:
-    {context[:4000]}
-    
-    Question: {question}
-    
-    Answer in complete sentences, identifying characters by name when possible:"""
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=4096)
-    outputs = model.generate(
-        inputs.input_ids.to(model.device),
-        max_length=512,
-        temperature=0.4,
-        top_p=0.9,
-        do_sample=True
-    )
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 # --- Main UI ---
 def main():
@@ -223,9 +157,10 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    # Load models
-    embeddings, tokenizer, qa_model, reranker = load_models()
-    if not all([embeddings, tokenizer, qa_model, reranker]):
+    # Request models directly from backend ModelService
+    models = ModelService.get_model_container()
+    if models is None:
+        st.error("Model loading failed.")
         return
 
     # Main Columns
@@ -244,24 +179,22 @@ def main():
             
             if pdf_file:
                 st.success("File uploaded successfully")
-                with pdfplumber.open(pdf_file) as pdf:
-                    text = ''
-                    for page in pdf.pages[:3]:  # Preview first few pages
-                        text += page.extract_text() + '\n'
+                
+                # Document Service preview extraction
+                preview_text = DocumentService.extract_preview(pdf_file, max_pages=3)
                 with st.expander("Document Preview", expanded=True):
                     st.caption("First page preview")
-                    st.text(text[:1000] + "...")
+                    st.text(preview_text[:1000] + "...")
                 
-                full_text = ''
-                with pdfplumber.open(pdf_file) as pdf:
-                    for page in pdf.pages:
-                        full_text += page.extract_text() + '\n'
+                # Full document extraction & processing
+                full_text, num_pages = DocumentService.extract_full_text(pdf_file)
+                chunks = ProcessingService.process_text(full_text)
+                detected_characters = MetadataService.extract_character_info(full_text)
                 
-                chunks = process_literary_text(full_text)
                 st.session_state['docs'] = chunks
                 st.session_state['processed'] = True
-                st.session_state['num_pages'] = len(pdf.pages)
-                st.session_state['num_characters'] = len(extract_character_info(full_text))
+                st.session_state['num_pages'] = num_pages
+                st.session_state['num_characters'] = len(detected_characters)
 
         # Analysis Section
         if 'processed' in st.session_state:
@@ -279,7 +212,12 @@ def main():
                     st.write("🔍 Identifying key passages...")
                     st.write("📖 Contextual analysis...")
                     st.write("✨ Generating insights...")
-                    answer = answer_character_question(query, st.session_state['docs'], tokenizer, qa_model)
+                    answer = QAService.answer_question(
+                        query,
+                        st.session_state['docs'],
+                        models.tokenizer,
+                        models.qa_model
+                    )
                     status.update(label="Analysis complete", state="complete")
                 
                 with st.container():
