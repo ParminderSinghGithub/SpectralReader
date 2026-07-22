@@ -16,3 +16,6 @@ uvicorn
 python-multipart
 pydantic
 requests
+pytest
+pytest-cov
+httpx
