@@ -298,6 +298,21 @@ pytest tests/ -v --cov=app --cov-report=term-missing
 
 ---
 
+## Validation
+
+SpectralReader includes a dedicated end-to-end validation framework under
+`validation/`.
+
+It automatically validates uploads, metadata extraction, search, question
+answering, deletion workflows, edge cases, performance metrics, and deployment
+readiness across multiple document types.
+
+See:
+
+validation/README.md
+
+---
+
 ## 🗺️ Roadmap & Future Enhancements
 
 - 🗄️ **Persistent Document Storage**: Transition from in-memory storage to PostgreSQL or SQLite.

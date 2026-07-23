@@ -1,2 +1,10 @@
 venv/
 __pycache__
+
+#Large pdf documents
+validation/pdfs/*
+!validation/pdfs/.gitkeep
+
+#Local assets
+validation/reports/*
+!validation/reports/.gitkeep

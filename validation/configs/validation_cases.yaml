@@ -1,0 +1,90 @@
+# SpectralReader End-to-End Automated Validation Framework Configuration
+
+settings:
+  backend_url: "http://localhost:8000"
+  timeout_seconds: 180.0
+  raw_archive_enabled: true
+  output_dir: "reports"
+  warning_thresholds:
+    upload_latency_ms: 90000.0
+    qa_latency_ms: 60000.0
+    warn_on_empty_entities: true
+    warn_on_empty_passages: true
+
+pdf_cases:
+  - filename: "2025_AnnualReport.pdf"
+    purpose: "Annual Business Report"
+    expected_upload_success: true
+    search_queries:
+      - "revenue"
+      - "AI"
+      - "risk"
+      - "sustainability"
+      - "CEO"
+      - "cloud"
+    qa_questions:
+      - "Who is the CEO?"
+      - "What are the company's major business segments?"
+      - "What risks are discussed?"
+      - "Summarize the report."
+      - "What AI initiatives are mentioned?"
+      - "What future strategy is discussed?"
+      - "Compare FY24 and FY25 performance."
+      - "Tell me about Bitcoin mining."
+
+  - filename: "the_canterville_ghost.pdf"
+    purpose: "Story / Literary Document"
+    expected_upload_success: true
+    search_queries:
+      - "ghost"
+      - "Otis"
+      - "Virginia"
+      - "Canterville"
+      - "bloodstain"
+      - "twins"
+    qa_questions:
+      - "Who is Sir Simon?"
+      - "Who is Virginia?"
+      - "Why is the ghost unhappy?"
+      - "Summarize the story."
+      - "Describe the ending."
+      - "What happens to the bloodstain?"
+      - "Compare Virginia and the ghost."
+      - "Who is Harry Potter?"
+
+  - filename: "sample-100pages.pdf"
+    purpose: "Medium Document Stress Test"
+    expected_upload_success: true
+    search_queries:
+      - "introduction"
+      - "chapter"
+      - "conclusion"
+      - "summary"
+    qa_questions:
+      - "What is this document about?"
+      - "Summarize the document."
+      - "What is discussed near the beginning?"
+      - "What is discussed near the end?"
+      - "What are the major topics?"
+
+  - filename: "sample-1000pages.pdf"
+    purpose: "Large Document Stress Test"
+    expected_upload_success: true
+    search_queries:
+      - "introduction"
+      - "chapter"
+      - "appendix"
+      - "references"
+      - "summary"
+    qa_questions:
+      - "Summarize the document."
+      - "What is discussed near the end?"
+      - "What is the main topic?"
+      - "What are the major sections?"
+      - "Explain the document briefly."
+
+  - filename: "empty.pdf"
+    purpose: "Empty PDF Failure Handling"
+    expected_upload_success: false
+    search_queries: []
+    qa_questions: []
