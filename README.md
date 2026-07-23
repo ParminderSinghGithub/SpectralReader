@@ -307,7 +307,7 @@ It automatically validates uploads, metadata extraction, search, question
 answering, deletion workflows, edge cases, performance metrics, and deployment
 readiness across multiple document types.
 
-See: [Validation README](validation/README)
+See: [Validation README](validation/README.md)
 
 ---
 
