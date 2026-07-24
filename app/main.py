@@ -182,64 +182,150 @@ def main():
                 with st.spinner("Uploading and processing document via REST API..."):
                     files = {"file": (pdf_file.name, pdf_file.getvalue(), "application/pdf")}
                     try:
-                        res = requests.post(f"{settings.API_BASE_URL}/documents", files=files, timeout=60)
+                        res = requests.post(f"{settings.API_BASE_URL}/documents", files=files, timeout=300)
                         if res.status_code == 201:
                             doc_data = res.json()
                             st.session_state['doc_id'] = doc_data['document_id']
                             st.session_state['num_pages'] = doc_data['num_pages']
                             st.session_state['num_chunks'] = doc_data['num_chunks']
-                            st.session_state['num_entities'] = len(doc_data['entities'])
+                            st.session_state['entities'] = doc_data.get('entities', [])
+                            st.session_state['num_entities'] = len(st.session_state['entities'])
                             st.session_state['uploaded_filename'] = pdf_file.name
                             st.session_state['processed'] = True
+
+                            # --- CLEAR ALL INSIGHTS STATE FOR NEW DOCUMENT ---
+                            for key in ['qa_answer', 'qa_context', 'qa_proc_time', 'last_question',
+                                        'search_passages', 'last_search_query']:
+                                st.session_state.pop(key, None)
+
                             st.success(f"Document '{pdf_file.name}' processed successfully via REST API.")
                         else:
                             st.error(f"Upload failed: {res.text}")
                     except Exception as e:
                         st.error(f"Failed to communicate with API server: {str(e)}")
 
-        # Analysis Section
-        if 'processed' in st.session_state and st.session_state.get('processed'):
+        # Document Insights Section
+        if st.session_state.get('processed'):
             st.divider()
             st.subheader("2. Document Insights")
             
-            query = st.text_input(
-                "Ask any question about the document",
-                placeholder="What are the key findings or details?",
-                key="query_input"
-            )
-            
-            if query:
-                with st.status("Querying REST API...", expanded=True) as status:
-                    st.write("🔍 Requesting QA service endpoint...")
-                    try:
-                        payload = {
-                            "document_id": st.session_state['doc_id'],
-                            "question": query
-                        }
-                        res = requests.post(f"{settings.API_BASE_URL}/qa", json=payload, timeout=120)
-                        if res.status_code == 200:
-                            qa_resp = res.json()
-                            answer = qa_resp['answer']
-                            proc_time = qa_resp['processing_time_ms']
-                            status.update(label=f"Analysis complete ({proc_time} ms)", state="complete")
-                            
-                            with st.container():
-                                st.subheader("Insights")
-                                st.markdown(f"""
-                                <div class="custom-card">
-                                    <h3>{query.strip('?').capitalize()}</h3>
-                                    <p style="color: #94a3b8;">
-                                    {answer}
-                                    </p>
-                                    <span style="font-size: 0.8rem; color: #64748b;">API Processing Time: {proc_time} ms</span>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        else:
-                            status.update(label="API Error", state="error")
-                            st.error(f"QA Request failed: {res.text}")
-                    except Exception as e:
-                        status.update(label="Connection Error", state="error")
-                        st.error(f"API communication error: {str(e)}")
+            # Document Overview & Entity Summary Container
+            with st.container():
+                st.markdown("##### 📌 Document Metadata Overview")
+                m_col1, m_col2, m_col3 = st.columns(3)
+                with m_col1:
+                    st.caption("Total Pages")
+                    st.markdown(f"**{st.session_state.get('num_pages', 0)}**")
+                with m_col2:
+                    st.caption("Text Chunks")
+                    st.markdown(f"**{st.session_state.get('num_chunks', 0)}**")
+                with m_col3:
+                    st.caption("Identified Entities")
+                    st.markdown(f"**{st.session_state.get('num_entities', 0)}**")
+
+                entities = st.session_state.get('entities', [])
+                if entities:
+                    with st.expander("🏷️ Extracted Entity Metadata", expanded=False):
+                        st.write(", ".join(entities[:30]) + ("..." if len(entities) > 30 else ""))
+
+            st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+
+            # Interactive Insights Tabs (QA & Passage Search)
+            tab_qa, tab_search = st.tabs(["🧠 Question Answering", "🔍 Passage Search"])
+
+            with tab_qa:
+                st.markdown("#### Context-Aware Question Answering")
+                qa_query = st.text_input(
+                    "Ask any question about the document",
+                    placeholder="What are the main findings, risks, or conclusions?",
+                    key="qa_query_input"
+                )
+                
+                if st.button("Generate Answer", key="btn_qa_submit"):
+                    if qa_query.strip():
+                        with st.status("Querying REST API QA Endpoint...", expanded=True) as status:
+                            try:
+                                payload = {
+                                    "document_id": st.session_state['doc_id'],
+                                    "question": qa_query
+                                }
+                                res = requests.post(f"{settings.API_BASE_URL}/qa", json=payload, timeout=120)
+                                if res.status_code == 200:
+                                    qa_resp = res.json()
+                                    st.session_state['qa_answer'] = qa_resp.get('answer', '')
+                                    st.session_state['qa_context'] = qa_resp.get('retrieved_context', [])
+                                    st.session_state['qa_proc_time'] = qa_resp.get('processing_time_ms', 0)
+                                    st.session_state['last_question'] = qa_query
+                                    status.update(label=f"QA Complete ({st.session_state['qa_proc_time']} ms)", state="complete")
+                                else:
+                                    status.update(label="API Error", state="error")
+                                    st.error(f"QA Request failed: {res.text}")
+                            except Exception as e:
+                                status.update(label="Connection Error", state="error")
+                                st.error(f"API communication error: {str(e)}")
+
+                # Present QA Results
+                if 'qa_answer' in st.session_state:
+                    st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div class="custom-card">
+                        <h3 style="margin-top: 0; color: var(--primary);">{st.session_state.get('last_question', 'Question')}</h3>
+                        <p style="color: var(--light); font-size: 1rem; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;">
+                        {st.session_state['qa_answer']}
+                        </p>
+                        <span style="font-size: 0.8rem; color: #64748b;">API Processing Time: {st.session_state.get('qa_proc_time', 0)} ms</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    retrieved = st.session_state.get('qa_context', [])
+                    if retrieved:
+                        with st.expander(f"📚 View Retrieved Context ({len(retrieved)} passages)", expanded=False):
+                            for idx, passage in enumerate(retrieved, 1):
+                                st.markdown(f"**Passage {idx}**")
+                                st.info(passage)
+
+            with tab_search:
+                st.markdown("#### Passage Retrieval & Keyword Search")
+                search_query = st.text_input(
+                    "Search document passages",
+                    placeholder="Enter keywords or terms (e.g., revenue, risk, architecture)",
+                    key="search_query_input"
+                )
+
+                if st.button("Search Passages", key="btn_search_submit"):
+                    if search_query.strip():
+                        with st.status("Searching document passages...", expanded=True) as status:
+                            try:
+                                payload = {
+                                    "document_id": st.session_state['doc_id'],
+                                    "query": search_query,
+                                    "top_k": 3
+                                }
+                                res = requests.post(f"{settings.API_BASE_URL}/search", json=payload, timeout=60)
+                                if res.status_code == 200:
+                                    search_resp = res.json()
+                                    st.session_state['search_passages'] = search_resp.get('results', [])
+                                    st.session_state['last_search_query'] = search_query
+                                    status.update(label=f"Found {len(st.session_state['search_passages'])} relevant passages", state="complete")
+                                else:
+                                    status.update(label="Search Error", state="error")
+                                    st.error(f"Search failed: {res.text}")
+                            except Exception as e:
+                                status.update(label="Connection Error", state="error")
+                                st.error(f"API communication error: {str(e)}")
+
+                # Present Search Results
+                if 'search_passages' in st.session_state:
+                    passages = st.session_state['search_passages']
+                    last_q = st.session_state.get('last_search_query', '')
+                    st.markdown(f"##### Search Results for: *'{last_q}'* ({len(passages)} passages found)")
+                    if not passages:
+                        st.warning("No matching passages found for this search query.")
+                    else:
+                        for idx, item in enumerate(passages, 1):
+                            with st.expander(f"📖 Passage {idx} (Chunk ID: {item.get('chunk_id', 'N/A')[:8]}...)", expanded=True if idx == 1 else False):
+                                text_content = item.get('text', '')
+                                st.markdown(f"```\n{text_content}\n```")
 
     with col2:
         # System Dashboard
