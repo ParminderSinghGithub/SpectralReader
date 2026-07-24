@@ -199,13 +199,16 @@ Probes health status automatically via container health checks on `http://localh
 
 ## ⚙️ Environment Variables Reference
 
-| Variable | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `HOST` | String | `0.0.0.0` | IP binding interface address |
-| `PORT` | Integer | `8000` | Port exposed by backend service |
-| `LOG_LEVEL` | String | `INFO` | Logger verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
-| `API_BASE_URL` | String | `http://localhost:8000` | Base URL used by Streamlit client |
-| `CORS_ORIGINS` | String | `*` | Allowed CORS origins (comma-separated) |
+| Variable | Type | Default | Requirement | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `HOST` | String | `0.0.0.0` | Required | IP binding interface address |
+| `PORT` | Integer | `8000` | Required | Port exposed by backend service |
+| `LOG_LEVEL` | String | `INFO` | Required | Logger verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `API_BASE_URL` | String | `http://localhost:8000` | Required | Base URL used by FastAPI backend service |
+| `STREAMLIT_BACKEND_URL` | String | `http://localhost:8000` | Required | Target backend URL used by Streamlit client |
+| `CORS_ORIGINS` | String | `*` | Required | Allowed CORS origins (comma-separated list) |
+| `HF_TOKEN` | String | None | Optional | Hugging Face Access Token for authenticated downloads |
+| `MODEL_CACHE_DIR` | String | None | Optional | Local directory path for caching downloaded HF models |
 
 ---
 

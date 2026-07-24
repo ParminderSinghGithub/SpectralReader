@@ -1,17 +1,22 @@
 import os
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 @dataclass(frozen=True)
 class Settings:
-    # Deployment-specific configuration (driven by environment variables with defaults)
+    # Deployment-specific configuration (driven by environment variables with sensible defaults)
     HOST: str = field(default_factory=lambda: os.getenv("HOST", "0.0.0.0"))
     PORT: int = field(default_factory=lambda: int(os.getenv("PORT", "8000")))
     LOG_LEVEL: str = field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO").upper())
     API_BASE_URL: str = field(default_factory=lambda: os.getenv("API_BASE_URL", "http://localhost:8000"))
+    STREAMLIT_BACKEND_URL: str = field(
+        default_factory=lambda: os.getenv("STREAMLIT_BACKEND_URL", os.getenv("API_BASE_URL", "http://localhost:8000"))
+    )
     CORS_ORIGINS: List[str] = field(
         default_factory=lambda: [origin.strip() for origin in os.getenv("CORS_ORIGINS", "*").split(",")]
     )
+    HF_TOKEN: Optional[str] = field(default_factory=lambda: os.getenv("HF_TOKEN", None))
+    MODEL_CACHE_DIR: Optional[str] = field(default_factory=lambda: os.getenv("MODEL_CACHE_DIR", None))
 
     # Internal system behavior configuration (constants)
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"

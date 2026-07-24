@@ -137,7 +137,7 @@ h3 {
 def check_api_health() -> bool:
     """Verify connectivity to backend FastAPI REST service."""
     try:
-        res = requests.get(f"{settings.API_BASE_URL}/health", timeout=3)
+        res = requests.get(f"{settings.STREAMLIT_BACKEND_URL}/health", timeout=3)
         return res.status_code == 200
     except requests.exceptions.RequestException:
         return False
@@ -158,7 +158,7 @@ def main():
     if not check_api_health():
         st.error("⚠️ Backend API Service Unavailable")
         st.warning(
-            f"The Streamlit client communicates exclusively via the FastAPI REST backend at `{settings.API_BASE_URL}`.\n\n"
+            f"The Streamlit client communicates exclusively via the FastAPI REST backend at `{settings.STREAMLIT_BACKEND_URL}`.\n\n"
             "Please start the backend service using the command below before using the interface:"
         )
         st.code("uvicorn app.main_api:app --reload --port 8000")
@@ -182,7 +182,7 @@ def main():
                 with st.spinner("Uploading and processing document via REST API..."):
                     files = {"file": (pdf_file.name, pdf_file.getvalue(), "application/pdf")}
                     try:
-                        res = requests.post(f"{settings.API_BASE_URL}/documents", files=files, timeout=300)
+                        res = requests.post(f"{settings.STREAMLIT_BACKEND_URL}/documents", files=files, timeout=300)
                         if res.status_code == 201:
                             doc_data = res.json()
                             st.session_state['doc_id'] = doc_data['document_id']
@@ -249,7 +249,7 @@ def main():
                                     "document_id": st.session_state['doc_id'],
                                     "question": qa_query
                                 }
-                                res = requests.post(f"{settings.API_BASE_URL}/qa", json=payload, timeout=120)
+                                res = requests.post(f"{settings.STREAMLIT_BACKEND_URL}/qa", json=payload, timeout=120)
                                 if res.status_code == 200:
                                     qa_resp = res.json()
                                     st.session_state['qa_answer'] = qa_resp.get('answer', '')
@@ -301,7 +301,7 @@ def main():
                                     "query": search_query,
                                     "top_k": 3
                                 }
-                                res = requests.post(f"{settings.API_BASE_URL}/search", json=payload, timeout=60)
+                                res = requests.post(f"{settings.STREAMLIT_BACKEND_URL}/search", json=payload, timeout=60)
                                 if res.status_code == 200:
                                     search_resp = res.json()
                                     st.session_state['search_passages'] = search_resp.get('results', [])

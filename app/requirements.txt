@@ -3,6 +3,7 @@ pdfplumber
 langchain
 langchain-text-splitters
 langchain-community
+langchain-huggingface
 transformers
 sentence-transformers
 torch
