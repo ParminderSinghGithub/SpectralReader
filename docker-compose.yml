@@ -6,12 +6,16 @@ services:
     container_name: spectralreader-api
     ports:
       - "${PORT:-8000}:8000"
+    volumes:
+      - ~/huggingface-cache:/root/.cache/huggingface
     environment:
       - HOST=0.0.0.0
       - PORT=8000
       - LOG_LEVEL=INFO
       - API_BASE_URL=http://localhost:8000
       - CORS_ORIGINS=*
+      - HF_TOKEN=${HF_TOKEN}
+      - MODEL_CACHE_DIR=/root/.cache/huggingface
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

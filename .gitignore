@@ -8,3 +8,5 @@ validation/pdfs/*
 #Local assets
 validation/reports/*
 !validation/reports/.gitkeep
+
+.env
