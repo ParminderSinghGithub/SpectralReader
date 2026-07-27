@@ -11,6 +11,22 @@
 
 ---
 
+## 🌐 Live Demo
+
+**Frontend (Streamlit):** https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app/>.streamlit.app
+
+**Backend API Docs (Swagger):** http://129.159.233.114/docs
+
+--- 
+
+## 🎥 Demo
+
+<p align="center">
+  <img src="demo.gif" alt="SpectralReader Demo" width="900">
+</p>
+
+--- 
+
 ## 🎯 Why SpectralReader?
 
 Unstructured text trapped in PDF documents—such as research papers, legal contracts, technical manuals, and corporate reports—is difficult to search and analyze efficiently. **SpectralReader** addresses this challenge by providing a structured Document Intelligence API and interactive client that extracts structural content, identifies key entities, and answers natural language questions over document passages.
