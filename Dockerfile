@@ -28,7 +28,7 @@ COPY --from=builder /install /usr/local
 # Copy application source code
 COPY app/ ./app/
 
-# Deployment environment defaults (overridden dynamically by Render / cloud platforms)
+# Deployment environment defaults (overridden dynamically by environment configuration / cloud platforms)
 ENV HOST=0.0.0.0
 ENV PORT=8000
 ENV LOG_LEVEL=INFO
