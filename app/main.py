@@ -190,6 +190,8 @@ def main():
                             st.session_state['num_chunks'] = doc_data['num_chunks']
                             st.session_state['entities'] = doc_data.get('entities', [])
                             st.session_state['num_entities'] = len(st.session_state['entities'])
+                            st.session_state['is_scanned'] = doc_data.get('is_scanned', False)
+                            st.session_state['ocr_used'] = doc_data.get('ocr_used', False)
                             st.session_state['uploaded_filename'] = pdf_file.name
                             st.session_state['processed'] = True
 
@@ -212,7 +214,7 @@ def main():
             # Document Overview & Entity Summary Container
             with st.container():
                 st.markdown("##### 📌 Document Metadata Overview")
-                m_col1, m_col2, m_col3 = st.columns(3)
+                m_col1, m_col2, m_col3, m_col4 = st.columns(4)
                 with m_col1:
                     st.caption("Total Pages")
                     st.markdown(f"**{st.session_state.get('num_pages', 0)}**")
@@ -222,6 +224,10 @@ def main():
                 with m_col3:
                     st.caption("Identified Entities")
                     st.markdown(f"**{st.session_state.get('num_entities', 0)}**")
+                with m_col4:
+                    st.caption("Extraction Mode")
+                    ocr_label = "OCR Used" if st.session_state.get('ocr_used') else "Text Extraction"
+                    st.markdown(f"**{ocr_label}**")
 
                 entities = st.session_state.get('entities', [])
                 if entities:
@@ -332,6 +338,7 @@ def main():
         with st.container(height=400):
             st.subheader("System Monitor")
             if 'processed' in st.session_state:
+                ocr_mode_str = "OCR Used" if st.session_state.get('ocr_used') else "Text Extraction"
                 st.markdown(f"""
                 <div class="custom-card">
                     <div style="display: flex; justify-content: space-between;">
@@ -342,6 +349,7 @@ def main():
                         <p style="color: #94a3b8; margin: 0.5rem 0;">📄 Pages: {st.session_state.get('num_pages', '—')}</p>
                         <p style="color: #94a3b8; margin: 0.5rem 0;">🧩 Chunks Generated: {st.session_state.get('num_chunks', '—')}</p>
                         <p style="color: #94a3b8; margin: 0.5rem 0;">🏷️ Entities Identified: {st.session_state.get('num_entities', '—')}</p>
+                        <p style="color: #94a3b8; margin: 0.5rem 0;">🔍 Mode: {ocr_mode_str}</p>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -356,6 +364,7 @@ def main():
                         <p style="color: #94a3b8; margin: 0.5rem 0;">📄 Pages: —</p>
                         <p style="color: #94a3b8; margin: 0.5rem 0;">🧩 Chunks Generated: —</p>
                         <p style="color: #94a3b8; margin: 0.5rem 0;">🏷️ Entities Identified: —</p>
+                        <p style="color: #94a3b8; margin: 0.5rem 0;">🔍 Mode: —</p>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -368,7 +377,7 @@ def main():
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 1rem;">
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">FastAPI</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Pydantic</span>
-                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">FLAN-T5</span>
+                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Gemini</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">LangChain</span>
                 </div>
             </div>
