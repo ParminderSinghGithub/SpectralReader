@@ -2,12 +2,13 @@
 
 An extensible, production-quality automated end-to-end (E2E) validation framework for **SpectralReader**.
 
-Unlike unit tests or mocks, this framework exercises the running **FastAPI REST backend** over HTTP exactly like a real user interface or external API consumer. It validates document uploads, metadata parsing, passage search queries, FLAN-T5 generative question answering, document deletion, edge cases, error handling, and performance metrics across supported machine-readable PDF document types.
+Unlike unit tests or mocks, this framework exercises the running **FastAPI REST backend** over HTTP exactly like a real user interface or external API consumer. It validates document uploads, metadata parsing, passage search queries, Gemini generative question answering, document deletion, edge cases, error handling, and performance metrics across supported PDF document types.
 
 > [!NOTE]
 > **Scope & Document Support Notice**:
-> The validation benchmark suite currently tests **machine-readable PDFs** containing native text streams.
-> Image-only or scanned PDF documents requiring Optical Character Recognition (OCR) are intentionally outside the current project scope and are excluded from benchmark deployment validation. OCR support is documented on the product roadmap for future releases.
+> The validation framework automatically tests **BOTH**:
+> 1. **Searchable Machine-Readable PDFs**: Validates native text stream parsing (`pdfplumber`), dense vector retrieval, cross-encoder reranking, and Gemini generative QA.
+> 2. **Scanned / Image-Based PDFs**: Validates automatic scanned document structure detection (`PDFDetector`), Poppler image rendering (`pdf2image`), Tesseract OCR extraction (`TesseractProvider`), dense vector retrieval, cross-encoder reranking, and Gemini generative QA.
 
 ---
 
@@ -16,11 +17,13 @@ Unlike unit tests or mocks, this framework exercises the running **FastAPI REST 
 ```
 validation/
 ├── pdfs/                           # Benchmark PDF test documents
+│   ├── attention_is_all_you_need.pdf # Searchable Technical Paper Benchmark (15 pages, OCR: false)
+│   ├── test_ocr.pdf                # Scanned OCR Benchmark Document (5 pages scanned, OCR: true)
 │   ├── 2025_AnnualReport.pdf       # Business Report Benchmark (80 pages)
 │   ├── the_canterville_ghost.pdf   # Story / Literary Benchmark (53 pages)
-│   ├── sample-100pages.pdf         # Medium Document Stress Test (100 pages)
+│   ├── sample-100pages.pdf         # Medium Document Benchmark (100 pages)
 │   ├── sample-1000pages.pdf        # Large Document Stress Test (1000 pages)
-│   └── empty.pdf                   # Graceful Input Error Test (empty/unparseable PDF)
+│   └── empty.pdf                   # Graceful Input Error Test (0-byte empty PDF -> Fast HTTP 400)
 ├── configs/
 │   └── validation_cases.yaml       # YAML configuration driven test suite
 ├── reports/
@@ -92,7 +95,7 @@ For every supported PDF benchmark test case in `configs/validation_cases.yaml`, 
 
 1. **Step 1: Upload (`POST /documents`)**
    - Uploads binary PDF.
-   - Verifies HTTP status `201 Created` and schema (`document_id`, `filename`, `num_pages`, `num_chunks`, `entities`).
+   - Verifies HTTP status `201 Created` and schema (`document_id`, `filename`, `num_pages`, `num_chunks`, `entities`, `is_scanned`, `ocr_used`).
    - Measures upload latency.
 2. **Step 2: Metadata (`GET /documents/{id}`)**
    - Fetches document metadata.
@@ -120,7 +123,7 @@ The validator categorizes every test result into one of four distinct categories
 
 - **`PASS`**: Endpoint responded correctly with expected success schema.
 - **`WARNING`**: Endpoint succeeded, but triggered an informational warning (e.g. zero search passages or latency threshold alert).
-- **`EXPECTED FAILURE`**: Endpoint returned non-200 status as explicitly expected for invalid input (e.g. `empty.pdf` returning HTTP `422`). Counts as a PASS for deployment readiness.
+- **`EXPECTED FAILURE`**: Endpoint returned expected error status for invalid input (e.g. `empty.pdf` returning fast HTTP `400 Bad Request`). Counts as a PASS for deployment readiness.
 - **`APPLICATION FAILURE`**: Unexpected HTTP 500 error or failure to meet API contract requirements.
 
 ---
@@ -132,15 +135,15 @@ The validator automatically executes non-PDF boundary tests:
 - **Duplicate Delete**: `DELETE /documents/{random_uuid}` twice -> Expects `404`.
 - **Search Non-Existent Document**: `POST /search` with invalid UUID -> Expects `404`.
 - **QA Non-Existent Document**: `POST /qa` with invalid UUID -> Expects `404`.
-- **Empty PDF Ingestion**: `POST /documents` with `empty.pdf` -> Expects graceful `422` error handling.
+- **Empty PDF Ingestion**: `POST /documents` with `empty.pdf` -> Expects fast HTTP `400 Bad Request` validation response (`InvalidDocumentError`).
 
 ---
 
 ## ➕ Adding New Benchmark PDF Test Cases & Questions
 
-To add a new machine-readable PDF document test case:
+To add a new PDF document test case:
 
-1. **Add PDF File**: Place your text-based PDF file inside `validation/pdfs/` (e.g., `new_contract.pdf`).
+1. **Add PDF File**: Place your PDF file inside `validation/pdfs/` (e.g., `new_contract.pdf`).
 2. **Update `validation/configs/validation_cases.yaml`**: Add a new block under `pdf_cases`:
 
 ```yaml
