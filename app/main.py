@@ -379,6 +379,7 @@ def main():
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Pydantic</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Gemini</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">LangChain</span>
+                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Tesseract OCR</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
