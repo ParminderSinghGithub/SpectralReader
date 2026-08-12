@@ -1,11 +1,12 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 class HealthResponse(BaseModel):
     status: str = Field(..., example="ok")
     service: str = Field("SpectralReader Document Intelligence API")
-    version: str = Field("1.0.0")
-    models_loaded: bool = Field(..., description="Whether backend ML models are initialized")
+    version: str = Field("1.1.0")
+    models_loaded: bool = Field(..., description="Whether backend ML vector models are initialized")
+    components: Optional[Dict[str, Any]] = Field(None, description="Detailed backend component health matrix")
 
 class DocumentUploadResponse(BaseModel):
     document_id: str = Field(..., description="Unique document UUID")
@@ -13,6 +14,8 @@ class DocumentUploadResponse(BaseModel):
     num_pages: int = Field(..., description="Total pages extracted")
     num_chunks: int = Field(..., description="Total chunks generated")
     entities: List[str] = Field(..., description="Extracted document entities")
+    is_scanned: bool = Field(False, description="Whether document was classified as a scanned image PDF")
+    ocr_used: bool = Field(False, description="Whether OCR pipeline was executed for text extraction")
     created_at: str = Field(..., description="ISO creation timestamp")
 
 class DocumentMetadataResponse(BaseModel):
@@ -21,6 +24,8 @@ class DocumentMetadataResponse(BaseModel):
     num_pages: int = Field(..., description="Total pages extracted")
     num_chunks: int = Field(..., description="Total chunks generated")
     entities: List[str] = Field(..., description="Extracted document entities")
+    is_scanned: bool = Field(False, description="Whether document was classified as a scanned image PDF")
+    ocr_used: bool = Field(False, description="Whether OCR pipeline was executed for text extraction")
     created_at: str = Field(..., description="ISO creation timestamp")
 
 class SearchRequest(BaseModel):
@@ -43,6 +48,10 @@ class QAResponse(BaseModel):
     answer: str = Field(..., description="Generated answer text")
     retrieved_context: List[str] = Field(..., description="Passages passed to QA model")
     processing_time_ms: float = Field(..., description="Total QA processing duration in milliseconds")
+    llm_provider: Optional[str] = Field(None, description="Active LLM provider used")
+    model_name: Optional[str] = Field(None, description="Active model name")
+    token_usage: Optional[Dict[str, Any]] = Field(None, description="Token usage details")
+    stage_latencies: Optional[Dict[str, Any]] = Field(None, description="Detailed stage latency measurements")
 
 class DeleteDocumentResponse(BaseModel):
     document_id: str = Field(...)

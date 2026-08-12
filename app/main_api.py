@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import uuid
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
@@ -22,13 +23,16 @@ logger = get_logger("SpectralReader-API")
 async def lifespan(app: FastAPI):
     """Lifespan context manager to handle startup logging and model pre-warming."""
     logger.info("Starting SpectralReader Document Intelligence API backend...")
-    logger.info(f"Configuration -> HOST: {settings.HOST}, PORT: {settings.PORT}, LOG_LEVEL: {settings.LOG_LEVEL}, API_BASE_URL: {settings.API_BASE_URL}")
+    logger.info(
+        f"Configuration -> HOST: {settings.HOST}, PORT: {settings.PORT}, LOG_LEVEL: {settings.LOG_LEVEL}, "
+        f"LLM_PROVIDER: {settings.LLM_PROVIDER}, OCR_PROVIDER: {settings.OCR_PROVIDER}"
+    )
     
     models = ModelService.get_model_container()
     if models is not None:
-        logger.info("Backend ML models successfully pre-warmed and loaded.")
+        logger.info("Backend ML vector models successfully pre-warmed and loaded.")
     else:
-        logger.warning("Backend ML models failed to initialize on startup.")
+        logger.warning("Backend ML vector models failed to initialize on startup.")
     
     yield
     logger.info("Shutting down SpectralReader API backend.")
@@ -36,19 +40,19 @@ async def lifespan(app: FastAPI):
 tags_metadata = [
     {
         "name": "Health",
-        "description": "Service health monitoring and model initialization status verification.",
+        "description": "Service health monitoring, vector models, active LLM provider, and OCR engine status.",
     },
     {
         "name": "Documents",
-        "description": "Document ingestion, text parsing, entity metadata extraction, and storage management.",
+        "description": "Document ingestion, PDF detection, parser/OCR extraction, metadata extraction, and storage.",
     },
     {
         "name": "Search",
-        "description": "Candidate passage search and chunk filtering over document text.",
+        "description": "Candidate passage search and cross-encoder reranking over document text.",
     },
     {
         "name": "QA",
-        "description": "Generative question answering over document passages using FLAN-T5.",
+        "description": "Provider-agnostic generative question answering powered by Google Gemini.",
     },
 ]
 
@@ -58,13 +62,13 @@ app = FastAPI(
     ### 📖 SpectralReader Document Intelligence API
     
     Production-grade REST microservice providing:
-    - **PDF Ingestion & Text Parsing** (`/documents`)
+    - **PDF Ingestion, Detection & OCR** (`/documents`)
     - **Entity Metadata Extraction** (`/documents`)
-    - **Passage Retrieval & Search** (`/search`)
-    - **Generative Question Answering** (`/qa`)
-    - **Service Health Probes** (`/health`)
+    - **Passage Retrieval & Reranking** (`/search`)
+    - **Provider-Agnostic Question Answering** (`/qa`)
+    - **Service Health Probes & Component Status** (`/health`)
     """,
-    version="1.0.0",
+    version="1.1.0",
     openapi_tags=tags_metadata,
     lifespan=lifespan
 )
@@ -78,14 +82,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Custom Middleware for Request Logging and Timing
+# Custom Middleware for Request Tracing and Timing
 @app.middleware("http")
 async def log_requests_and_timing(request: Request, call_next):
+    req_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
     start_time = time.perf_counter()
     response = await call_next(request)
     process_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
     response.headers["X-Process-Time"] = f"{process_time_ms}ms"
-    logger.info(f"{request.method} {request.url.path} - Status: {response.status_code} - Duration: {process_time_ms}ms")
+    response.headers["X-Request-ID"] = req_id
+    logger.info(f"[{req_id}] {request.method} {request.url.path} - Status: {response.status_code} - Duration: {process_time_ms}ms")
     return response
 
 # Custom Exception Handlers

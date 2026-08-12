@@ -39,3 +39,27 @@ class ModelInitializationError(SpectralReaderException):
             message=f"Model initialization failed: {detail}",
             status_code=500
         )
+
+class LLMProviderError(SpectralReaderException):
+    """Raised when an LLM provider generation request fails."""
+    def __init__(self, provider_name: str, detail: str):
+        super().__init__(
+            message=f"LLM Provider '{provider_name}' error: {detail}",
+            status_code=502
+        )
+
+class OCRError(SpectralReaderException):
+    """Raised when OCR extraction fails."""
+    def __init__(self, detail: str):
+        super().__init__(
+            message=f"OCR extraction failed: {detail}",
+            status_code=422
+        )
+
+class PipelineError(SpectralReaderException):
+    """Raised when pipeline orchestration fails."""
+    def __init__(self, detail: str):
+        super().__init__(
+            message=f"Pipeline error: {detail}",
+            status_code=500
+        )

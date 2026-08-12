@@ -20,7 +20,11 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    tesseract-ocr \
+    libtesseract-dev \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Copy installed dependencies from builder stage
 COPY --from=builder /install /usr/local

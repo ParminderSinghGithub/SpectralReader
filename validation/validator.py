@@ -153,6 +153,17 @@ class Validator:
             result.num_pages = body.get("num_pages", 0)
             result.num_chunks = body.get("num_chunks", 0)
             result.entities = body.get("entities", body.get("characters_identified", []))
+            result.is_scanned = body.get("is_scanned", False)
+            result.ocr_used = body.get("ocr_used", False)
+
+            if case.expected_ocr_used is not None:
+                if result.ocr_used != case.expected_ocr_used:
+                    warn_msg = f"OCR invocation mismatch for {case.filename}: expected_ocr_used={case.expected_ocr_used}, actual ocr_used={result.ocr_used}"
+                    result.warnings.append(warn_msg)
+                    console.print(f"  [yellow]⚠️ {case.filename}: {warn_msg}[/yellow]")
+                else:
+                    ocr_status_str = "OCR Engaged (Scanned PDF)" if result.ocr_used else "Standard Parser (Searchable PDF)"
+                    console.print(f"  [green]✓ {case.filename}: Detected as {ocr_status_str}[/green]")
 
             if lat > self.settings.warning_thresholds.upload_latency_ms:
                 warn_msg = f"Upload latency ({lat:.0f} ms) exceeded threshold ({self.settings.warning_thresholds.upload_latency_ms:.0f} ms)"
@@ -160,6 +171,7 @@ class Validator:
 
             if not result.entities and self.settings.warning_thresholds.warn_on_empty_entities:
                 result.warnings.append("No entities identified during upload metadata extraction")
+
         else:
             result.upload_passed = False
             result.result_category = "APPLICATION FAILURE"
@@ -403,11 +415,14 @@ class Validator:
             "QA Endpoint": all(p.qa_passed for p in self.pdf_results if p.expected_upload_success),
             "Delete Endpoint": all(p.delete_passed and p.verify_delete_passed for p in self.pdf_results if p.expected_upload_success),
             "Invalid Input Handling": all_err_tests_ok and pdf_by_name.get("empty.pdf", PDFValidationResult("empty.pdf", "", False)).overall_passed,
+            "Technical Paper Benchmark": pdf_by_name.get("attention_is_all_you_need.pdf", PDFValidationResult("attention_is_all_you_need.pdf", "", True)).overall_passed,
+            "Scanned OCR Benchmark": pdf_by_name.get("test_ocr.pdf", PDFValidationResult("test_ocr.pdf", "", True)).overall_passed,
             "Business Report Benchmark": pdf_by_name.get("2025_AnnualReport.pdf", PDFValidationResult("2025_AnnualReport.pdf", "", True)).overall_passed,
             "Story Benchmark": pdf_by_name.get("the_canterville_ghost.pdf", PDFValidationResult("the_canterville_ghost.pdf", "", True)).overall_passed,
             "Medium Document Benchmark": pdf_by_name.get("sample-100pages.pdf", PDFValidationResult("sample-100pages.pdf", "", True)).overall_passed,
             "Large Document Benchmark": pdf_by_name.get("sample-1000pages.pdf", PDFValidationResult("sample-1000pages.pdf", "", True)).overall_passed,
         }
+
 
         overall_verdict = "READY FOR DEPLOYMENT" if all(checklist.values()) else "NOT READY FOR DEPLOYMENT"
 

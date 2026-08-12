@@ -17,6 +17,7 @@ class APIClient:
         self.raw_dir = raw_dir
         self.session = requests.Session()
         self.request_counter = 0
+        self._last_qa_time = 0.0
 
         if self.settings.raw_archive_enabled and self.raw_dir:
             os.makedirs(self.raw_dir, exist_ok=True)
@@ -91,11 +92,13 @@ class APIClient:
         if not os.path.exists(file_path):
             return 0, {"error": f"Local file not found: '{file_path}'"}, 0.0
 
+        upload_timeout = getattr(self.settings, "upload_timeout_seconds", 600.0)
         start = time.perf_counter()
         try:
             with open(file_path, "rb") as f:
-                files = {"file": (filename, f, "application/pdf")}
-                res = self.session.post(url, files=files, timeout=self.timeout)
+                content = f.read()
+                files = {"file": (filename, content, "application/pdf")}
+                res = self.session.post(url, files=files, timeout=upload_timeout)
             latency = (time.perf_counter() - start) * 1000.0
             try:
                 body = res.json()
@@ -156,6 +159,14 @@ class APIClient:
         endpoint = "/qa"
         url = f"{self.base_url}{endpoint}"
         payload = {"document_id": document_id, "question": question}
+
+        # Pacing Gemini QA requests (~5 seconds spacing) to respect 15 RPM limit
+        if self._last_qa_time > 0:
+            elapsed = time.time() - self._last_qa_time
+            if elapsed < 5.0:
+                time.sleep(5.0 - elapsed)
+        self._last_qa_time = time.time()
+
         start = time.perf_counter()
         try:
             res = self.session.post(url, json=payload, timeout=self.timeout)

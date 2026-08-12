@@ -161,6 +161,8 @@ class PDFValidationResult:
     delete_status_code: int = 0
     delete_latency_ms: float = 0.0
     verify_delete_passed: bool = False
+    is_scanned: bool = False
+    ocr_used: bool = False
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
     overall_passed: bool = False
@@ -189,6 +191,8 @@ class PDFValidationResult:
             "qa_test_count": len(self.qa_results),
             "delete_passed": self.delete_passed,
             "verify_delete_passed": self.verify_delete_passed,
+            "is_scanned": self.is_scanned,
+            "ocr_used": self.ocr_used,
             "warnings": self.warnings,
             "errors": self.errors,
             "overall_passed": self.overall_passed,

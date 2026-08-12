@@ -26,7 +26,9 @@ class DocumentStore:
         full_text: str,
         num_pages: int,
         chunks: List[str],
-        entities: List[str]
+        entities: List[str],
+        is_scanned: bool = False,
+        ocr_used: bool = False
     ) -> dict:
         doc_id = str(uuid.uuid4())
         created_at = datetime.now(timezone.utc).isoformat()
@@ -39,10 +41,12 @@ class DocumentStore:
             "num_chunks": len(chunks),
             "entities": entities,
             "characters": entities,  # Backward compatibility key
+            "is_scanned": is_scanned,
+            "ocr_used": ocr_used,
             "created_at": created_at
         }
         self._documents[doc_id] = doc_data
-        logger.info(f"Added document {doc_id} ('{filename}') to in-memory store.")
+        logger.info(f"Added document {doc_id} ('{filename}') to in-memory store (is_scanned={is_scanned}, ocr_used={ocr_used}).")
         return doc_data
 
     def get_document(self, document_id: str) -> Optional[dict]:

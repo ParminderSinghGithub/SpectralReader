@@ -3,6 +3,7 @@
 settings:
   backend_url: "http://localhost:8000"
   timeout_seconds: 180.0
+  upload_timeout_seconds: 600.0
   raw_archive_enabled: true
   output_dir: "reports"
   warning_thresholds:
@@ -12,6 +13,68 @@ settings:
     warn_on_empty_passages: true
 
 pdf_cases:
+  - filename: "attention_is_all_you_need.pdf"
+    purpose: "Searchable Technical Research Paper Benchmark"
+    expected_upload_success: true
+    expected_ocr_used: false
+    search_queries:
+      - "Transformer"
+      - "attention"
+      - "self-attention"
+      - "positional encoding"
+      - "BLEU"
+      - "multi-head"
+      - "encoder"
+      - "decoder"
+    qa_questions:
+      - "What is the primary architecture proposed in the paper?"
+      - "How does the Transformer model avoid recurrence and convolutions?"
+      - "What are the key components of the Transformer encoder block?"
+      - "How does the Transformer decoder differ from the encoder stack?"
+      - "What is Scaled Dot-Product Attention and how is it calculated?"
+      - "Why is the scaling factor used in dot-product attention?"
+      - "What is Multi-Head Attention and what advantage does it provide?"
+      - "How are Positional Encodings represented and injected into the model?"
+      - "What is the function of the Position-wise Feed-Forward Networks?"
+      - "How is self-attention masked in the decoder stack?"
+      - "What dimensionality is used for key, value, and model embeddings?"
+      - "What machine translation benchmarks were evaluated in the experiments?"
+      - "What BLEU score did the Transformer Big model achieve on WMT 2014 English-to-German?"
+      - "How does computational complexity per layer compare between Self-Attention and Recurrent layers?"
+      - "What optimizer and learning rate schedule were used during training?"
+      - "What regularization techniques were applied during model training?"
+      - "What hardware and training time were required for the base and big models?"
+      - "What are the main advantages and limitations of the Transformer model?"
+
+  - filename: "test_ocr.pdf"
+    purpose: "Scanned PDF & OCR Engine Benchmark"
+    expected_upload_success: true
+    expected_ocr_used: true
+    search_queries:
+      - "name"
+      - "certificate"
+      - "number"
+      - "date"
+      - "authority"
+      - "marks"
+    qa_questions:
+      - "What is the full name of the candidate in the scanned certificate?"
+      - "What unique document identification number is displayed?"
+      - "What is the date of birth or date of issue listed on the document?"
+      - "Which educational institution or issuing authority granted the certificate?"
+      - "What course or examination title is mentioned in the record?"
+      - "What marks or grade percentage is recorded?"
+      - "What is the father's or guardian's name listed on the certificate?"
+      - "What address or location is printed on the identity document?"
+      - "What document type is scanned?"
+      - "What registration or serial number appears at the margin?"
+      - "What subject names are listed in the mark sheet?"
+      - "What is the year of passing indicated on the document?"
+      - "Who signed or authenticated the certificate?"
+      - "What division or classification was awarded?"
+      - "Is there an expiration date mentioned on the document?"
+      - "Summarize the key details extracted from the scanned document."
+
   - filename: "2025_AnnualReport.pdf"
     purpose: "Annual Business Report"
     expected_upload_success: true

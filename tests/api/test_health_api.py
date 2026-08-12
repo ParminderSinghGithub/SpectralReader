@@ -6,8 +6,9 @@ def test_get_health_success(test_client):
     data = response.json()
     assert data["status"] == "ok"
     assert data["service"] == "SpectralReader Document Intelligence API"
-    assert data["version"] == "1.0.0"
+    assert data["version"] == "1.1.0"
     assert data["models_loaded"] is True
+    assert "components" in data
 
 def test_get_health_models_unloaded(test_client):
     with patch("app.services.model_service.ModelService.get_model_container", return_value=None):

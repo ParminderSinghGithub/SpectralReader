@@ -1,35 +1,44 @@
-from typing import List
-from app.services.metadata_service import MetadataService
+from typing import List, Tuple, Optional
+from app.generation.context_builder import ContextBuilder
+from app.generation.prompt_builder import PromptBuilder
+from app.llm.factory import LLMProviderFactory
+from app.llm.base import GenerationConfig, LLMResponse
 from app.core.config import settings
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
 class QAService:
+    """Decoupled RAG question answering service orchestrating context building, prompt rendering, and LLM generation."""
+
     @staticmethod
-    def answer_question(question: str, docs: List[str], tokenizer, model) -> str:
-        """Filter context passages containing document entity info and generate answer using model."""
-        character_passages = []
-        for doc in docs:
-            if any(entity in doc for entity in MetadataService.extract_entities(doc)):
-                character_passages.append(doc)
-        if not character_passages:
-            return "I couldn't find relevant information in the document."
-        context = "\n".join(character_passages[:3])
-        prompt = f"""Analyze this document excerpt and answer the question.
-    
-    Excerpt:
-    {context[:settings.MAX_PROMPT_CONTEXT_CHARS]}
-    
-    Question: {question}
-    
-    Answer in complete sentences based on the excerpt:"""
-        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=4096)
-        outputs = model.generate(
-            inputs.input_ids.to(model.device),
-            max_length=settings.MAX_GEN_LENGTH,
+    def answer_question(
+        question: str,
+        docs: List[str],
+        provider_name: Optional[str] = None
+    ) -> Tuple[str, List[str], LLMResponse]:
+        """Execute RAG pipeline: ContextBuilder -> PromptBuilder -> LLMProvider."""
+        context_builder = ContextBuilder(max_context_chars=settings.MAX_PROMPT_CONTEXT_CHARS)
+        prepared_passages, char_count = context_builder.prepare_context(docs)
+
+        if not prepared_passages:
+            fallback_resp = LLMResponse(
+                text="The provided document passages do not contain sufficient information to answer this question.",
+                provider_name=provider_name or settings.LLM_PROVIDER,
+                model_name=settings.GEMINI_DEFAULT_MODEL
+            )
+            return fallback_resp.text, [], fallback_resp
+
+        prompt = PromptBuilder.build_qa_prompt(prepared_passages, question)
+
+        provider = LLMProviderFactory.get_provider(provider_name)
+        gen_config = GenerationConfig(
             temperature=settings.GEN_TEMPERATURE,
             top_p=settings.GEN_TOP_P,
-            do_sample=True
+            max_tokens=settings.MAX_GEN_LENGTH
         )
-        return tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+        response = provider.generate(prompt, config=gen_config)
+        logger.info(f"QAService generated answer ({len(response.text)} chars) via LLM provider '{provider.provider_name}'")
+
+        return response.text, prepared_passages, response

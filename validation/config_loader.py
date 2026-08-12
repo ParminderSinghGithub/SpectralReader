@@ -3,7 +3,7 @@
 import os
 import yaml
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 @dataclass
 class WarningThresholds:
@@ -16,6 +16,7 @@ class WarningThresholds:
 class Settings:
     backend_url: str = "http://localhost:8000"
     timeout_seconds: float = 60.0
+    upload_timeout_seconds: float = 600.0
     raw_archive_enabled: bool = True
     output_dir: str = "reports"
     warning_thresholds: WarningThresholds = field(default_factory=WarningThresholds)
@@ -25,6 +26,7 @@ class PDFCase:
     filename: str
     purpose: str
     expected_upload_success: bool = True
+    expected_ocr_used: Optional[bool] = None
     search_queries: List[str] = field(default_factory=list)
     qa_questions: List[str] = field(default_factory=list)
 
@@ -59,6 +61,7 @@ def load_config(config_path: str) -> ValidationConfig:
     settings = Settings(
         backend_url=str(raw_settings.get("backend_url", "http://localhost:8000")).rstrip("/"),
         timeout_seconds=float(raw_settings.get("timeout_seconds", 60.0)),
+        upload_timeout_seconds=float(raw_settings.get("upload_timeout_seconds", 600.0)),
         raw_archive_enabled=bool(raw_settings.get("raw_archive_enabled", True)),
         output_dir=str(raw_settings.get("output_dir", "reports")),
         warning_thresholds=thresholds
@@ -71,6 +74,7 @@ def load_config(config_path: str) -> ValidationConfig:
                 filename=item.get("filename", ""),
                 purpose=item.get("purpose", "Document Test"),
                 expected_upload_success=item.get("expected_upload_success", True),
+                expected_ocr_used=item.get("expected_ocr_used", None),
                 search_queries=item.get("search_queries", []),
                 qa_questions=item.get("qa_questions", [])
             )
