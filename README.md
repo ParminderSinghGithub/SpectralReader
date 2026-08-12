@@ -276,13 +276,20 @@ Previously, the FastAPI backend was hosted on Render (`spectralreader-api.onrend
 
 | Variable | Type | Default | Requirement | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `HOST` | String | `0.0.0.0` | Required | IP binding interface address |
-| `PORT` | Integer | `8000` | Required | Port exposed by backend service |
+| `HOST` | String | `0.0.0.0` | Required | IP binding interface address for Uvicorn server |
+| `PORT` | Integer | `8000` | Required | HTTP port exposed by backend service |
 | `LOG_LEVEL` | String | `INFO` | Required | Logger verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
 | `API_BASE_URL` | String | `http://localhost:8000` | Required | Base URL used by FastAPI backend service |
 | `STREAMLIT_BACKEND_URL` | String | `http://localhost:8000` | Required | Target backend URL used by Streamlit client |
 | `CORS_ORIGINS` | String | `*` | Required | Allowed CORS origins (comma-separated list) |
-| `HF_TOKEN` | String | None | Optional | Hugging Face User Access Token for model downloads |
+| `LLM_PROVIDER` | String | `gemini` | Required | Active generative LLM provider (`gemini`) |
+| `GEMINI_API_KEY` | String | None | Required for QA | Google Gemini REST API authentication key |
+| `GEMINI_DEFAULT_MODEL` | String | `gemini-3.1-flash-lite` | Optional | Primary Google Gemini model for generative question answering |
+| `GEMINI_FALLBACK_MODELS` | String | `gemini-3.5-flash-lite,gemini-3.6-flash` | Optional | Ordered fallback models triggered sequentially on HTTP 429 quota limit |
+| `ENABLE_OCR` | Boolean | `true` | Optional | Master toggle to enable/disable automated OCR for scanned PDFs |
+| `OCR_PROVIDER` | String | `tesseract` | Optional | Active OCR engine implementation (`tesseract`) |
+| `OCR_MIN_TEXT_CHARS_PER_PAGE` | Integer | `50` | Optional | Character threshold per page to distinguish searchable vs scanned image PDFs |
+| `HF_TOKEN` | String | None | Optional | Hugging Face User Access Token for gated embedding models |
 | `MODEL_CACHE_DIR` | String | None | Optional | Host volume directory path for caching downloaded HF models |
 
 ---
