@@ -7,8 +7,8 @@ Unlike unit tests or mocks, this framework exercises the running **FastAPI REST 
 > [!NOTE]
 > **Scope & Document Support Notice**:
 > The validation framework automatically tests **BOTH**:
-> 1. **Searchable Machine-Readable PDFs**: Validates native text stream parsing (`pdfplumber`), dense vector retrieval, cross-encoder reranking, and Gemini generative QA.
-> 2. **Scanned / Image-Based PDFs**: Validates automatic scanned document structure detection (`PDFDetector`), Poppler image rendering (`pdf2image`), Tesseract OCR extraction (`TesseractProvider`), dense vector retrieval, cross-encoder reranking, and Gemini generative QA.
+> 1. **Searchable Machine-Readable PDFs**: Validates native text stream parsing (`pdfplumber`), text chunking, entity extraction, candidate passage search, and Gemini generative QA.
+> 2. **Scanned / Image-Based PDFs**: Validates automatic scanned document structure detection (`PDFDetector`), Poppler image rendering (`pdf2image`), Tesseract OCR extraction (`TesseractProvider`), text chunking, entity extraction, candidate passage search, and Gemini generative QA.
 
 ---
 

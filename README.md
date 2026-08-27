@@ -7,15 +7,15 @@
 [![OCI](https://img.shields.io/badge/Deployed-Oracle%20Cloud-F80000.svg)](https://www.oracle.com/cloud/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**SpectralReader** is an AI-powered Document Intelligence application designed for document understanding, PDF text extraction, entity metadata recognition, passage retrieval, and context-aware question answering. Built with a modular Python backend powered by **FastAPI** and **Google Gemini**, it decouples machine learning inference, vector embeddings, cross-encoder reranking, Tesseract OCR, and provider-agnostic LLM generation from its interactive **Streamlit** user interface.
+**SpectralReader** is an AI-powered Document Intelligence application designed for document understanding, PDF text extraction, entity metadata recognition, candidate passage search, and context-aware question answering. Built with a modular Python backend powered by **FastAPI** and **Google Gemini**, it decouples document ingestion, automated Tesseract OCR, text chunking, entity extraction, passage filtering, and provider-agnostic LLM generation from its interactive **Streamlit** user interface.
 
 ---
 
-## 🌐 Live Demo
+## 🌐 Live Demo & API Documentation
 
-**Frontend (Streamlit):** https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app/>.streamlit.app
-
-**Backend API Docs (Swagger):** http://129.159.233.114/docs
+- **Frontend Application (Streamlit):** [https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app](https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app)
+- **Backend API Interactive Docs (Swagger UI):** [http://129.159.233.114/docs](http://129.159.233.114/docs)
+- **OpenAPI 3.1 Specification (JSON):** [http://129.159.233.114/openapi.json](http://129.159.233.114/openapi.json)
 
 --- 
 
@@ -56,7 +56,7 @@ Local Container (spectralreader-api)
     │
 FastAPI Backend Service ───► Google Gemini API (Generative QA)
     │
-ML Models (Multilingual Embeddings & Reranker) & Tesseract OCR
+ML Model Infrastructure & Tesseract OCR Engine
 ```
 
 ### Microservice Architecture Diagram
@@ -74,8 +74,8 @@ graph TD
             API -->|Chunk Text| ProcService[ProcessingService]
             API -->|Extract Entities| MetaService[MetadataService]
             API -->|In-Memory Store| Storage[DocumentStore]
-            API -->|Passage Reranking| SearchService[Search / Reranker]
-            API -->|QA Inference| QAService[QAService]
+            API -->|Entity Passage Search| SearchService[Search Service]
+            API -->|QA Context Builder| QAService[QAService]
             
             QAService -->|Provider Abstraction| GeminiProvider[Gemini Provider]
             GeminiProvider -->|REST API| GeminiAPI[Google Gemini API]
@@ -90,7 +90,7 @@ graph TD
 - **FastAPI as Core Backend**: Chosen for high performance, automatic Pydantic request/response validation, native OpenAPI/Swagger generation, and clean asynchronous request routing.
 - **Nginx as Host Reverse Proxy**: Standard production entry point managing public HTTP traffic on Port 80 and proxying to the local containerized backend service.
 - **Streamlit as Official Frontend**: Streamlit provides a responsive interface for document uploads and interactive analysis without adding complex frontend JavaScript build pipelines.
-- **Backend as Single Source of Truth**: All PDF parsing, OCR detection, text cleaning, chunking, entity extraction, model loading, vector reranking, and Gemini QA generation reside strictly within backend services.
+- **Backend as Single Source of Truth**: All PDF parsing, OCR detection, text cleaning, chunking, entity extraction, passage filtering, and Gemini QA generation reside strictly within backend services.
 - **Exclusive REST API Communication**: The Streamlit client communicates with the backend exclusively over HTTP REST endpoints. If the backend is offline, Streamlit prompts the operator to start the server rather than silently running local in-process fallbacks.
 - **Provider-Agnostic LLM Layer**: Generative QA is decoupled into an extensible provider abstraction interface (`BaseLLMProvider`). The current active provider is Google Gemini, configured with 3-tier model fallback (`gemini-3.1-flash-lite` primary -> `gemini-3.5-flash-lite` -> `gemini-3.6-flash`) triggering on HTTP 429 rate limit errors.
 - **External System Integration**: Decoupling business logic into REST endpoints enables external systems (mobile apps, CLI tools, automated batch pipelines) to consume the service independently.
@@ -119,7 +119,7 @@ Searchable Text PDF                        Scanned / Image PDF
                               │
                  Entity Extraction & Storage
                               │
-                 Vector Retrieval & Reranking
+                 Context Budgeting & Deduplication
                               │
                  Gemini Generative QA Response
 ```
@@ -136,7 +136,8 @@ Searchable Text PDF                        Scanned / Image PDF
 - 🔍 **Automatic OCR Engine**: Integrated Tesseract 5.5.0 and Poppler inside Docker for seamless scanned PDF processing without manual user selection.
 - 🧩 **Semantic Text Chunking**: Boundary-aware document splitting with configurable chunk sizes and overlap limits.
 - 🏷️ **Entity Metadata Recognition**: Pattern-based entity extraction and frequency analysis.
-- 🎯 **Vector Retrieval & Reranking**: Multilingual sentence-transformers dense vector retrieval combined with Cross-Encoder MS-MARCO reranking.
+- 🎯 **Candidate Passage Search**: Entity-based chunk filtering with sequential fallback for fast passage inspection without LLM inference overhead.
+- 📦 **Model Infrastructure Readiness**: `ModelService` pre-loads sentence-transformers embedding and cross-encoder reranking models in memory on startup, reporting component readiness via `/health`.
 - 🧠 **Provider-Agnostic Question Answering**: Generative answer synthesis using Google Gemini (`gemini-3.1-flash-lite` primary with automatic 3-tier fallback to `gemini-3.5-flash-lite` and `gemini-3.6-flash`).
 - ⚡ **REST Microservice**: Standardized JSON responses, Pydantic data validation, and global exception handling.
 - 📊 **Health Probes & Metrics**: `/health` endpoint reporting active LLM provider, model status, OCR engine availability, and `X-Process-Time` timing headers.
@@ -153,7 +154,7 @@ Searchable Text PDF                        Scanned / Image PDF
 | **Frontend Interface** | Streamlit | Interactive web user interface client |
 | **LLM Provider** | Google Gemini (`gemini-3.1-flash-lite`) | Generative question answering with 3-tier 429 fallback (`3.5-flash-lite`, `3.6-flash`) |
 | **OCR Engine** | Tesseract 5.5.0, Poppler, `pdf2image` | Automatic text extraction for scanned raster PDF documents |
-| **Vector & Reranker Models** | `paraphrase-multilingual-mpnet-base-v2`, `ms-marco-MiniLM-L-12-v2` | Dense vector embedding search and cross-encoder passage reranking |
+| **ML Infrastructure Models** | `paraphrase-multilingual-mpnet-base-v2`, `ms-marco-MiniLM-L-12-v2` | Pre-warmed embedding and cross-encoder models monitored for service readiness via `/health` |
 | **Document Processing** | `pdfplumber`, LangChain | Native PDF text extraction, structure detection, and recursive chunking |
 | **API & Data Validation**| Pydantic, Python-Multipart | Schema validation and multipart file upload handling |
 | **Containerization** | Docker, Docker Compose | Multi-stage container builds with pre-packaged Tesseract/Poppler binaries |
@@ -361,6 +362,11 @@ curl -X GET "http://localhost:8000/documents/<document_id>"
 ```
 
 ### 4. Search Candidate Passages
+Retrieves candidate passages from stored document chunks using entity-presence filtering:
+1. Resolves document chunks from the in-memory `DocumentStore`.
+2. Evaluates stored chunks against regex-extracted entity metadata (`MetadataService.extract_entities`).
+3. Returns top-k entity-matching passages (or falls back to top-k sequential chunks if no entity matches exist).
+
 ```bash
 curl -X POST "http://localhost:8000/search" \
   -H "Content-Type: application/json" \
@@ -369,6 +375,17 @@ curl -X POST "http://localhost:8000/search" \
     "query": "What are the primary findings?",
     "top_k": 3
   }'
+```
+**Example Response**:
+```json
+{
+  "document_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "query": "What are the primary findings?",
+  "results": [
+    "Executive Summary passage containing key findings...",
+    "Quarterly revenue expanded by 18% during fiscal year..."
+  ]
+}
 ```
 
 ### 5. Generative Question Answering

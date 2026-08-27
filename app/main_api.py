@@ -48,7 +48,7 @@ tags_metadata = [
     },
     {
         "name": "Search",
-        "description": "Candidate passage search and cross-encoder reranking over document text.",
+        "description": "Candidate passage search with entity-based filtering.",
     },
     {
         "name": "QA",
@@ -64,7 +64,7 @@ app = FastAPI(
     Production-grade REST microservice providing:
     - **PDF Ingestion, Detection & OCR** (`/documents`)
     - **Entity Metadata Extraction** (`/documents`)
-    - **Passage Retrieval & Reranking** (`/search`)
+    - **Passage Retrieval & Entity Filtering** (`/search`)
     - **Provider-Agnostic Question Answering** (`/qa`)
     - **Service Health Probes & Component Status** (`/health`)
     """,
