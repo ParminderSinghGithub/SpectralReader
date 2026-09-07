@@ -329,8 +329,17 @@ def main():
                         st.warning("No matching passages found for this search query.")
                     else:
                         for idx, item in enumerate(passages, 1):
-                            with st.expander(f"📖 Passage {idx} (Chunk ID: {item.get('chunk_id', 'N/A')[:8]}...)", expanded=True if idx == 1 else False):
+                            if isinstance(item, dict):
+                                chunk_id = item.get('chunk_id') or 'N/A'
                                 text_content = item.get('text', '')
+                                score = item.get('score')
+                                score_label = f" | Score: {score:.3f}" if score is not None else ""
+                            else:
+                                chunk_id = 'N/A'
+                                text_content = str(item)
+                                score_label = ""
+                            chunk_badge = f"{chunk_id[:8]}..." if chunk_id != 'N/A' else 'N/A'
+                            with st.expander(f"📖 Passage {idx} (Chunk ID: {chunk_badge}{score_label})", expanded=True if idx == 1 else False):
                                 st.markdown(f"```\n{text_content}\n```")
 
     with col2:
@@ -378,7 +387,8 @@ def main():
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">FastAPI</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Pydantic</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Gemini</span>
-                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">LangChain</span>
+                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">FAISS RAG</span>
+                    <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">CrossEncoder</span>
                     <span class="stSuccess" style="padding: 0.2rem 0.5rem; border-radius: 6px;">Tesseract OCR</span>
                 </div>
             </div>

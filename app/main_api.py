@@ -48,7 +48,7 @@ tags_metadata = [
     },
     {
         "name": "Search",
-        "description": "Candidate passage search with entity-based filtering.",
+        "description": "Two-stage semantic passage retrieval via in-memory FAISS and CrossEncoder reranking.",
     },
     {
         "name": "QA",
@@ -56,18 +56,20 @@ tags_metadata = [
     },
 ]
 
+api_description = (
+    "REST API for document processing, optical character recognition, "
+    "vector retrieval, and grounded question answering.\n\n"
+    "**Core Capabilities**\n\n"
+    "* **PDF Ingestion, Detection & OCR** (`/documents`): Digital text extraction via pdfplumber with automatic routing to Tesseract OCR for scanned documents.\n"
+    "* **Entity Metadata Extraction** (`/documents`): Identification and frequency analysis of extracted entities.\n"
+    "* **Semantic Passage Retrieval & Reranking** (`/search`): In-memory FAISS vector retrieval (`IndexFlatIP`) with CrossEncoder reranking (`ms-marco-MiniLM-L-12-v2`).\n"
+    "* **Question Answering** (`/qa`): Grounded context selection (top-3 reranked passages) with Google Gemini generative inference.\n"
+    "* **Service Health & Components** (`/health`): Status probes for backend vector models, OCR engine, and active LLM provider."
+)
+
 app = FastAPI(
     title="SpectralReader Document Intelligence API",
-    description="""
-    ### 📖 SpectralReader Document Intelligence API
-    
-    Production-grade REST microservice providing:
-    - **PDF Ingestion, Detection & OCR** (`/documents`)
-    - **Entity Metadata Extraction** (`/documents`)
-    - **Passage Retrieval & Entity Filtering** (`/search`)
-    - **Provider-Agnostic Question Answering** (`/qa`)
-    - **Service Health Probes & Component Status** (`/health`)
-    """,
+    description=api_description,
     version="1.1.0",
     openapi_tags=tags_metadata,
     lifespan=lifespan
