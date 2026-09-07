@@ -63,3 +63,12 @@ class PipelineError(SpectralReaderException):
             message=f"Pipeline error: {detail}",
             status_code=500
         )
+
+class RetrievalError(SpectralReaderException):
+    """Raised when retrieval indexing or candidate search fails."""
+    def __init__(self, detail: str, status_code: int = 500):
+        super().__init__(
+            message=f"Retrieval error: {detail}",
+            status_code=status_code
+        )
+

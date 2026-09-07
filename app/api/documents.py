@@ -58,13 +58,18 @@ def get_document_metadata(document_id: str):
 
 @router.delete("/{document_id}", response_model=DeleteDocumentResponse)
 def delete_document(document_id: str):
-    """Remove document from memory storage."""
+    """Remove document from memory storage and vector index."""
     store = DocumentStore.get_instance()
     deleted = store.delete_document(document_id)
     if not deleted:
         logger.warning(f"Attempted to delete non-existent document ID '{document_id}'")
         raise DocumentNotFoundError(document_id)
+
+    from app.services.retrieval_service import RetrievalService
+    RetrievalService.get_instance().delete_index(document_id)
+
     return DeleteDocumentResponse(
         document_id=document_id,
         message=f"Document '{document_id}' successfully removed from memory storage."
     )
+

@@ -24,7 +24,8 @@ def answer_question(request: QARequest):
     with tracker.measure_stage("qa_generation"):
         answer_text, retrieved_context, llm_resp = QAService.answer_question(
             question=request.question,
-            docs=doc["chunks"]
+            document_id=request.document_id,
+            docs=doc.get("chunks", [])
         )
 
     processing_time_ms = tracker.total_elapsed_ms()

@@ -1,0 +1,122 @@
+# SpectralReader RAG Evaluation Dataset
+# 15 Ground-Truth Question/Context/Answer Triples across 7 representative PDFs
+
+golden_cases:
+  # 1. attention_is_all_you_need.pdf (Technical Research Paper)
+  - id: "attn_q1"
+    pdf_filename: "attention_is_all_you_need.pdf"
+    question: "What is Scaled Dot-Product Attention and how is it computed?"
+    target_substring: "Scaled Dot-Product Attention"
+    target_keywords: ["Scaled Dot-Product", "softmax", "sqrt(d_k)"]
+    ground_truth_answer: "Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V, scaling the dot products by 1/sqrt(d_k)."
+
+  - id: "attn_q2"
+    pdf_filename: "attention_is_all_you_need.pdf"
+    question: "What is Multi-Head Attention and what advantage does it provide?"
+    target_substring: "Multi-Head Attention"
+    target_keywords: ["Multi-Head Attention", "representation subspaces", "parallel"]
+    ground_truth_answer: "Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions."
+
+  - id: "attn_q3"
+    pdf_filename: "attention_is_all_you_need.pdf"
+    question: "How are Positional Encodings represented in the Transformer architecture?"
+    target_substring: "Positional Encoding"
+    target_keywords: ["Positional Encoding", "sine", "cosine", "frequencies"]
+    ground_truth_answer: "Positional encodings use sine and cosine functions of different frequencies to inject order information."
+
+  - id: "attn_q4"
+    pdf_filename: "attention_is_all_you_need.pdf"
+    question: "What BLEU score did the Transformer big model achieve on the WMT 2014 English-to-German task?"
+    target_substring: "BLEU"
+    target_keywords: ["BLEU", "English-to-German", "28.4"]
+    ground_truth_answer: "The Transformer big model achieved a state-of-the-art BLEU score of 28.4 on WMT 2014 English-to-German."
+
+  # 2. the_canterville_ghost.pdf (Literary Story)
+  - id: "ghost_q1"
+    pdf_filename: "the_canterville_ghost.pdf"
+    question: "Who murdered Lady Eleanore de Canterville according to Mrs. Umney?"
+    target_substring: "Sir Simon de Canterville"
+    target_keywords: ["Sir Simon de Canterville", "murdered", "1575"]
+    ground_truth_answer: "Lady Eleanore was murdered on that spot by her own husband, Sir Simon de Canterville, in 1575."
+
+  - id: "ghost_q2"
+    pdf_filename: "the_canterville_ghost.pdf"
+    question: "What cleaner is used to remove the blood-stain in Canterville Chase?"
+    target_substring: "Pinkerton"
+    target_keywords: ["Pinkerton", "blood-stain", "Cleaner"]
+    ground_truth_answer: "Washington Otis used Pinkerton's Champion Stain Remover and Paragon Detergent to remove the blood-stain."
+
+  - id: "ghost_q3"
+    pdf_filename: "the_canterville_ghost.pdf"
+    question: "Who is Virginia in The Canterville Ghost?"
+    target_substring: "Virginia"
+    target_keywords: ["Virginia", "daughter", "Otis"]
+    ground_truth_answer: "Virginia is the fifteen-year-old daughter of Mr. and Mrs. Otis who befriends Sir Simon."
+
+  # 3. 2025_AnnualReport.pdf (Business Report)
+  - id: "msft_q1"
+    pdf_filename: "2025_AnnualReport.pdf"
+    question: "What anniversary milestone is highlighted at the opening of the 2025 Annual Report?"
+    target_substring: "Fifty years after our founding"
+    target_keywords: ["Fifty years", "founding", "Microsoft"]
+    ground_truth_answer: "Microsoft celebrates fifty years after its founding at the heart of a generational technology moment."
+
+  - id: "msft_q2"
+    pdf_filename: "2025_AnnualReport.pdf"
+    question: "Who signed the shareholder letter in the 2025 Annual Report?"
+    target_substring: "Satya Nadella"
+    target_keywords: ["Satya Nadella", "Chief Executive Officer", "Chairman"]
+    ground_truth_answer: "Satya Nadella, Chairman and Chief Executive Officer."
+
+  - id: "msft_q3"
+    pdf_filename: "2025_AnnualReport.pdf"
+    question: "What core technological transformation is prioritized across cloud and business operations?"
+    target_substring: "artificial intelligence"
+    target_keywords: ["artificial intelligence", "AI platform", "cloud"]
+    ground_truth_answer: "Accelerating diffusion of artificial intelligence across cloud infrastructure and business applications."
+
+  # 4. sample-100pages.pdf (Medium Document Stress Test)
+  - id: "sample100_q1"
+    pdf_filename: "sample-100pages.pdf"
+    question: "What format and font details are given on Page 1 of the 100-page document?"
+    target_substring: "Total Pages: 100 pages"
+    target_keywords: ["100 pages", "Helvetica", "QwikPDF"]
+    ground_truth_answer: "Format: PDF 1.7, Fonts: Helvetica, Helvetica-Bold, Courier, Created By: QwikPDF."
+
+  - id: "sample100_q2"
+    pdf_filename: "sample-100pages.pdf"
+    question: "What section title appears on Page 50 of the 100-page document?"
+    target_substring: "Section 50: Background & Context"
+    target_keywords: ["Section 50", "Background & Context", "Page 50"]
+    ground_truth_answer: "Section 50: Background & Context."
+
+  # 5. sample-1000pages.pdf (Large Document Stress Test)
+  - id: "sample1000_q1"
+    pdf_filename: "sample-1000pages.pdf"
+    question: "What document information is specified on Page 1 of the 1000-page document?"
+    target_substring: "Total Pages: 1000 pages"
+    target_keywords: ["1000 pages", "Black & White Text", "QwikPDF"]
+    ground_truth_answer: "Total Pages: 1000 pages, Black & White Text, Created By QwikPDF."
+
+  - id: "sample1000_q2"
+    pdf_filename: "sample-1000pages.pdf"
+    question: "What section appears on Page 500 of the 1000-page document?"
+    target_substring: "Section 500: Key Findings"
+    target_keywords: ["Section 500", "Key Findings", "Page 500"]
+    ground_truth_answer: "Section 500: Key Findings."
+
+  # 6. test_ocr.pdf (Scanned PDF Benchmark)
+  - id: "ocr_q1"
+    pdf_filename: "test_ocr.pdf"
+    question: "What type of document is represented by the scanned test_ocr file?"
+    target_substring: "certificate"
+    target_keywords: ["certificate", "examination", "record"]
+    ground_truth_answer: "A scanned educational identity certificate and marks statement."
+
+  # 7. empty.pdf (Empty Document Negative Benchmark)
+  - id: "empty_q1"
+    pdf_filename: "empty.pdf"
+    question: "What content is contained in the empty PDF document?"
+    target_substring: ""
+    target_keywords: []
+    ground_truth_answer: "The document is completely empty containing 0 extractable text characters."

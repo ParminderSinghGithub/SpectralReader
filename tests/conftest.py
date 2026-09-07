@@ -34,17 +34,36 @@ class MockLLMProvider(BaseLLMProvider):
 
 @pytest.fixture
 def reset_document_store():
-    """Reset the in-memory document store state before and after each test."""
+    """Reset the in-memory document store and retrieval index state before and after each test."""
+    from app.services.retrieval_service import RetrievalService
     store = DocumentStore.get_instance()
+    retrieval = RetrievalService.get_instance()
     store._documents.clear()
+    retrieval.clear()
     yield store
     store._documents.clear()
+    retrieval.clear()
 
 @pytest.fixture
 def mock_model_container():
     """Mocked backend model container for fast, deterministic testing without loading ML weights."""
     mock_embeddings = MagicMock()
     mock_reranker = MagicMock()
+
+    # Deterministic mock vectors and reranker predictions
+    def fake_embed_documents(texts):
+        return [[float(i + 1) / (j + 1) for j in range(768)] for i, _ in enumerate(texts)]
+
+    def fake_embed_query(text):
+        return [1.0 / (j + 1) for j in range(768)]
+
+    def fake_predict(pairs):
+        import numpy as np
+        return np.array([float(10.0 - i) for i, _ in enumerate(pairs)], dtype=np.float32)
+
+    mock_embeddings.embed_documents.side_effect = fake_embed_documents
+    mock_embeddings.embed_query.side_effect = fake_embed_query
+    mock_reranker.predict.side_effect = fake_predict
 
     return ModelContainer(
         embeddings=mock_embeddings,

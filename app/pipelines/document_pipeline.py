@@ -5,6 +5,7 @@ from app.ocr.ocr_service import OCRService
 from app.services.document_service import DocumentService
 from app.services.processing_service import ProcessingService
 from app.services.metadata_service import MetadataService
+from app.services.retrieval_service import RetrievalService
 from app.storage.document_store import DocumentStore
 from app.core.config import settings
 from app.core.exceptions import DocumentProcessingError, InvalidDocumentError
@@ -13,7 +14,7 @@ from app.core.logger import get_logger
 logger = get_logger(__name__)
 
 class DocumentPipeline:
-    """Orchestrates PDF structure detection, parser/OCR extraction, chunking, entity extraction, and storage."""
+    """Orchestrates PDF structure detection, parser/OCR extraction, chunking, entity extraction, storage, and vector indexing."""
 
     @staticmethod
     def execute(filename: str, pdf_file: BytesIO) -> Dict[str, Any]:
@@ -61,7 +62,7 @@ class DocumentPipeline:
         # 4. Entity Metadata Extraction
         entities = MetadataService.extract_entities(full_text)
 
-        # 5. Index & Store Document
+        # 5. Store Document in In-Memory Store
         store = DocumentStore.get_instance()
         doc_data = store.add_document(
             filename=filename,
@@ -73,8 +74,13 @@ class DocumentPipeline:
             ocr_used=ocr_used
         )
 
+        # 6. Embed and Index Chunks in FAISS Vector Index
+        if chunks:
+            retrieval_service = RetrievalService.get_instance()
+            retrieval_service.index_document(doc_id=doc_data["document_id"], chunks=chunks)
+
         logger.info(
-            f"Pipeline: Successfully stored document '{filename}' (ID: {doc_data['document_id']}) "
+            f"Pipeline: Successfully stored and indexed document '{filename}' (ID: {doc_data['document_id']}) "
             f"is_scanned={is_scanned}, ocr_used={ocr_used}"
         )
         return doc_data

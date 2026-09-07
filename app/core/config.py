@@ -38,6 +38,8 @@ class Settings:
     # Retrieval & Generation Parameters
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
     RERANKER_MODEL_NAME: str = "cross-encoder/ms-marco-MiniLM-L-12-v2"
+    RETRIEVAL_TOP_K: int = 10
+    RERANK_TOP_N: int = 3
     CHUNK_SIZE: int = 1500
     CHUNK_OVERLAP: int = 300
     MAX_PROMPT_CONTEXT_CHARS: int = 4000

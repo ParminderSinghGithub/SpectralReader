@@ -36,7 +36,7 @@ class SearchRequest(BaseModel):
 class SearchResponse(BaseModel):
     document_id: str = Field(...)
     query: str = Field(...)
-    results: List[str] = Field(..., description="Matching document passages")
+    results: List[Any] = Field(..., description="Matching document passages or structured result items")
 
 class QARequest(BaseModel):
     document_id: str = Field(..., description="ID of target document")

@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from app.models.schemas import SearchRequest, SearchResponse
 from app.storage.document_store import DocumentStore
-from app.services.metadata_service import MetadataService
+from app.services.retrieval_service import RetrievalService
+from app.core.config import settings
 from app.core.exceptions import DocumentNotFoundError
 from app.core.logger import get_logger
 
@@ -11,30 +12,35 @@ router = APIRouter(prefix="/search", tags=["Search"])
 
 @router.post("", response_model=SearchResponse)
 def search_passages(request: SearchRequest):
-    """Search / retrieve relevant passages from document chunks."""
+    """Search / retrieve relevant passages from document chunks using FAISS dense retrieval and CrossEncoder reranking."""
     store = DocumentStore.get_instance()
     doc = store.get_document(request.document_id)
     if not doc:
         logger.warning(f"Search requested for non-existent document ID '{request.document_id}'")
         raise DocumentNotFoundError(request.document_id)
 
-    chunks = doc["chunks"]
-    top_k = request.top_k or 3
+    retrieval_service = RetrievalService.get_instance()
 
-    matching_passages = []
-    for chunk in chunks:
-        if any(entity in chunk for entity in MetadataService.extract_entities(chunk)):
-            matching_passages.append(chunk)
+    # 1. Retrieve candidates via FAISS index using configured RETRIEVAL_TOP_K
+    candidates = retrieval_service.retrieve_candidates(
+        doc_id=request.document_id,
+        query=request.query,
+        top_k=settings.RETRIEVAL_TOP_K
+    )
 
-    if not matching_passages:
-        matching_passages = chunks[:top_k]
-    else:
-        matching_passages = matching_passages[:top_k]
+    # 2. Rerank candidates using CrossEncoder down to requested top_k (or RERANK_TOP_N)
+    top_n = request.top_k or settings.RERANK_TOP_N
+    reranked_results = retrieval_service.rerank(
+        query=request.query,
+        candidates=candidates,
+        top_n=top_n
+    )
 
-    logger.info(f"Retrieved {len(matching_passages)} passages for search query on document '{request.document_id}'")
+    logger.info(f"Retrieved and reranked {len(reranked_results)} passages for query on document '{request.document_id}'")
 
     return SearchResponse(
         document_id=request.document_id,
         query=request.query,
-        results=matching_passages
+        results=reranked_results
     )
+
