@@ -27,9 +27,9 @@ Document Intelligence Platform
 ## 🌐 Live Demo & API Documentation
 
 - **Frontend Application (Streamlit):** [https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app](https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app)
-- **Backend Hosting:** Deployed on **Railway** via containerized Dockerfile with dynamic port routing and automated TLS termination.
-- **Backend API Interactive Docs (Swagger UI):** Available at `<RAILWAY_URL>/docs` (Local development: `http://localhost:8000/docs`)
-- **OpenAPI 3.1 Specification (JSON):** Available at `<RAILWAY_URL>/openapi.json` (Local development: `http://localhost:8000/openapi.json`)
+- **Backend API Base URL (Railway):** [https://spectralreader-api-production.up.railway.app](https://spectralreader-api-production.up.railway.app)
+- **Backend API Interactive Docs (Swagger UI):** [https://spectralreader-api-production.up.railway.app/docs](https://spectralreader-api-production.up.railway.app/docs) (Local: `http://localhost:8000/docs`)
+- **OpenAPI 3.1 Specification (JSON):** [https://spectralreader-api-production.up.railway.app/openapi.json](https://spectralreader-api-production.up.railway.app/openapi.json) (Local: `http://localhost:8000/openapi.json`)
 - **Historical OCI Deployment Evidence:** Historical deployment on Oracle Cloud Infrastructure (OCI) is preserved in [`historical-oci-screenshots/`](historical-oci-screenshots/) documenting the running Ubuntu VM, Nginx proxy, and Swagger documentation.
 
 --- 
@@ -330,9 +330,9 @@ SpectralReader is hosted in production on **Railway** using the repository's mul
 
 The FastAPI backend exposes interactive OpenAPI documentation and standardized REST endpoints:
 
-- **Swagger UI Documentation**: `http://<PUBLIC_HOST>/docs`
-- **OpenAPI Specification JSON**: `http://<PUBLIC_HOST>/openapi.json`
-- **Health Check Endpoint**: `http://<PUBLIC_HOST>/health`
+- **Swagger UI Documentation**: [https://spectralreader-api-production.up.railway.app/docs](https://spectralreader-api-production.up.railway.app/docs) (Local: `http://localhost:8000/docs`)
+- **OpenAPI Specification JSON**: [https://spectralreader-api-production.up.railway.app/openapi.json](https://spectralreader-api-production.up.railway.app/openapi.json) (Local: `http://localhost:8000/openapi.json`)
+- **Health Check Endpoint**: [https://spectralreader-api-production.up.railway.app/health](https://spectralreader-api-production.up.railway.app/health) (Local: `http://localhost:8000/health`)
 
 ### 1. Health Check
 ```bash
@@ -495,11 +495,11 @@ To verify a deployment (local container or Railway):
 1. **Check Container Status**:
    Ensure the container is running and healthy. On Railway, monitor deployment build logs and runtime status in the Railway dashboard.
 2. **Health Probe**:
-   Run `curl -f https://<YOUR_APP_URL>/health` (or `http://localhost:8000/health` locally) to confirm the backend service reports `"status": "ok"`, `models_loaded: true`, and component statuses.
+   Run `curl -f https://spectralreader-api-production.up.railway.app/health` (or `http://localhost:8000/health` locally) to confirm the backend service reports `"status": "ok"`, `models_loaded: true`, and component statuses.
 3. **Interactive Swagger Documentation**:
-   Navigate to `https://<YOUR_APP_URL>/docs` in a web browser to verify interactive API documentation rendering.
+   Navigate to `https://spectralreader-api-production.up.railway.app/docs` in a web browser to verify interactive API documentation rendering.
 4. **OpenAPI Schema Verification**:
-   Access `https://<YOUR_APP_URL>/openapi.json` to verify the OpenAPI JSON specification download.
+   Access `https://spectralreader-api-production.up.railway.app/openapi.json` to verify the OpenAPI JSON specification download.
 
 ---
 
