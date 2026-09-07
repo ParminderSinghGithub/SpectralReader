@@ -4,7 +4,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.139-emerald.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Client-FF4B4B.svg)](https://streamlit.io/)
 [![Docker](https://img.shields.io/badge/Docker-Multi--stage-2496ED.svg)](https://www.docker.com/)
-[![OCI](https://img.shields.io/badge/Deployed-Oracle%20Cloud-F80000.svg)](https://www.oracle.com/cloud/)
+[![Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E.svg)](https://railway.app/)
+[![OCI](https://img.shields.io/badge/Historical-Oracle%20Cloud-F80000.svg)](https://www.oracle.com/cloud/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **SpectralReader** is an AI-powered Document Intelligence platform designed for document understanding, PDF text extraction, entity recognition, semantic vector retrieval, cross-encoder reranking, and grounded question answering. Built with a modular Python backend powered by **FastAPI**, **in-memory FAISS**, and **Google Gemini**, it decouples document ingestion, automated Tesseract OCR, vector indexing, passage reranking, and provider-agnostic LLM generation from its interactive **Streamlit** user interface.
@@ -26,8 +27,10 @@ Document Intelligence Platform
 ## 🌐 Live Demo & API Documentation
 
 - **Frontend Application (Streamlit):** [https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app](https://parmindersinghgithub-spectralreader-appmain-4nyq8c.streamlit.app)
-- **Backend API Interactive Docs (Swagger UI):** [http://129.159.233.114/docs](http://129.159.233.114/docs)
-- **OpenAPI 3.1 Specification (JSON):** [http://129.159.233.114/openapi.json](http://129.159.233.114/openapi.json)
+- **Backend Hosting:** Deployed on **Railway** via containerized Dockerfile with dynamic port routing and automated TLS termination.
+- **Backend API Interactive Docs (Swagger UI):** Available at `<RAILWAY_URL>/docs` (Local development: `http://localhost:8000/docs`)
+- **OpenAPI 3.1 Specification (JSON):** Available at `<RAILWAY_URL>/openapi.json` (Local development: `http://localhost:8000/openapi.json`)
+- **Historical OCI Deployment Evidence:** Historical deployment on Oracle Cloud Infrastructure (OCI) is preserved in [`historical-oci-screenshots/`](historical-oci-screenshots/) documenting the running Ubuntu VM, Nginx proxy, and Swagger documentation.
 
 --- 
 
@@ -49,25 +52,23 @@ Unstructured text trapped in PDF documents—such as research papers, legal cont
 - **RESTful API Design**: Single source of truth API built with FastAPI, Pydantic validation, and OpenAPI specification.
 - **Provider-Agnostic LLM Layer**: Decoupled LLM generation supporting Google Gemini with multi-tier model fallback (`gemini-3.1-flash-lite` primary -> `gemini-3.5-flash-lite` -> `gemini-3.6-flash`).
 - **Automated PDF Structure Detection & OCR**: Inspection pipeline distinguishing searchable PDFs from scanned raster PDFs, automatically invoking Tesseract OCR only when required.
-- **Deployment-Ready Engineering**: Environment-driven configurations, structured logging, multi-stage Docker builds with Tesseract/Poppler system binaries, Nginx reverse proxying, and production deployment on Oracle Cloud Infrastructure (OCI).
+- **Deployment-Ready Engineering**: Environment-driven configurations, structured logging, multi-stage Docker builds with Tesseract/Poppler system binaries, dynamic port routing, and cloud deployment on Railway (with historical deployment on OCI).
 
 ---
 
 ## 🏛️ System Architecture
 
-SpectralReader uses a decoupled client-service architecture. In production on Oracle Cloud Infrastructure (OCI), an **Nginx** reverse proxy receives external client HTTP requests on Port 80 and forwards them to the **FastAPI Backend Service** running inside a container. The **Streamlit Web Application** functions as an interactive API client.
+SpectralReader uses a decoupled client-service architecture. The **FastAPI Backend Service** runs containerized on **Railway** listening on `0.0.0.0:${PORT}` with automated TLS/HTTPS edge termination. The **Streamlit Web Application** functions as an interactive API client.
 
 ### Request Flow Topology
 ```
 Internet
     │
-Port 80 (HTTP)
+Railway Edge / Cloudflare (HTTPS Termination)
     │
-Nginx (Host Reverse Proxy)
+Containerized Microservice (spectralreader-api)
     │
-Local Container (spectralreader-api)
-    │
-FastAPI Backend Service ───► Google Gemini API (Generative QA)
+FastAPI Backend (0.0.0.0:${PORT}) ───► Google Gemini API (Generative QA)
     │
 ML Model Infrastructure & Tesseract OCR Engine
 ```
@@ -75,31 +76,29 @@ ML Model Infrastructure & Tesseract OCR Engine
 ### Microservice Architecture Diagram
 ```mermaid
 graph TD
-    Client([User / External Client]) -->|Port 80 HTTP| Nginx[Nginx Reverse Proxy]
-    Nginx -->|Reverse Proxy| Docker[Docker Container]
+    Client([User / External Client]) -->|HTTPS| Edge[Railway Edge Router]
+    Edge -->|Reverse Proxy| Docker[Docker Container]
 
-    subgraph OCI Ubuntu 24.04 Production Host
-        subgraph Docker Container Tier
-            Docker --> API[FastAPI Backend Service]
-            API -->|PDF Structure Inspection| Detector[PDFDetector]
-            Detector -->|Searchable Text| DocService[DocumentService]
-            Detector -->|Scanned / Image PDF| OCRService[OCRService / Tesseract]
-            API -->|Chunk Text| ProcService[ProcessingService]
-            API -->|Extract Entities| MetaService[MetadataService]
-            API -->|In-Memory Store| Storage[DocumentStore]
-            
-            %% Production RAG Subsystem
-            API -->|Embed Chunks & Query| Retrieval[RetrievalService]
-            Retrieval -->|Embeddings| ModelContainer[ModelService: MPNet + CrossEncoder]
-            Retrieval -->|Index & Cosine Search| FAISS[In-Memory FAISS IndexFlatIP]
-            Retrieval -->|Score & Rerank| CrossEncoder[ms-marco-MiniLM-L-12-v2]
-            
-            API -->|Candidate Search| SearchAPI[Search Route: FAISS top-10 -> Rerank top-k]
-            API -->|QA Pipeline| QAService[QAService: FAISS top-10 -> Rerank top-3 -> ContextBuilder]
-            
-            QAService -->|Provider Abstraction| GeminiProvider[Gemini Provider]
-            GeminiProvider -->|REST API| GeminiAPI[Google Gemini API]
-        end
+    subgraph Railway Container Tier
+        Docker --> API[FastAPI Backend Service: 0.0.0.0:${PORT}]
+        API -->|PDF Structure Inspection| Detector[PDFDetector]
+        Detector -->|Searchable Text| DocService[DocumentService]
+        Detector -->|Scanned / Image PDF| OCRService[OCRService / Tesseract]
+        API -->|Chunk Text| ProcService[ProcessingService]
+        API -->|Extract Entities| MetaService[MetadataService]
+        API -->|In-Memory Store| Storage[DocumentStore]
+        
+        %% Production RAG Subsystem
+        API -->|Embed Chunks & Query| Retrieval[RetrievalService]
+        Retrieval -->|Embeddings| ModelContainer[ModelService: MPNet + CrossEncoder]
+        Retrieval -->|Index & Cosine Search| FAISS[In-Memory FAISS IndexFlatIP]
+        Retrieval -->|Score & Rerank| CrossEncoder[ms-marco-MiniLM-L-12-v2]
+        
+        API -->|Candidate Search| SearchAPI[Search Route: FAISS top-10 -> Rerank top-k]
+        API -->|QA Pipeline| QAService[QAService: FAISS top-10 -> Rerank top-3 -> ContextBuilder]
+        
+        QAService -->|Provider Abstraction| GeminiProvider[Gemini Provider]
+        GeminiProvider -->|REST API| GeminiAPI[Google Gemini API]
     end
 ```
 
@@ -113,7 +112,7 @@ graph TD
 - **Two-Stage Retrieval & CrossEncoder Reranking**: First stage performs dense vector retrieval pulling top-10 candidates; second stage evaluates query-passage pairs with `cross-encoder/ms-marco-MiniLM-L-12-v2` to select the top-3 most semantically relevant passages.
 - **Grounded Context Selection**: QAService grounds generation strictly in the top-3 reranked passages, budgeted within ~4,000 characters. The LLM does not receive the entire document merely because it fits within the context window.
 - **Zero Architectural Bloat**: FAISS is kept in-memory for the application lifecycle. No persistent vector database, and no orchestration layers (LangChain/LangGraph/AutoGen/LlamaIndex) were introduced into the core retrieval path.
-- **Nginx as Host Reverse Proxy**: Standard production entry point managing public HTTP traffic on Port 80 and proxying to the local containerized backend service.
+- **Cloud-Native Edge Routing**: Railway provides automated TLS termination, edge proxying, and container routing, replacing host-level Nginx configuration while preserving full container isolation.
 - **Streamlit as Official Frontend**: Streamlit provides a responsive interface for document uploads and interactive analysis without adding complex frontend JavaScript build pipelines.
 - **Backend as Single Source of Truth**: All PDF parsing, OCR detection, chunking, vector indexing, reranking, and Gemini QA generation reside strictly within backend services.
 - **Provider-Agnostic LLM Layer**: Generative QA is decoupled into an extensible provider abstraction interface (`BaseLLMProvider`). The current active provider is Google Gemini, configured with 3-tier model fallback (`gemini-3.1-flash-lite` primary -> `gemini-3.5-flash-lite` -> `gemini-3.6-flash`) triggering on HTTP 429 rate limit errors.
@@ -172,8 +171,8 @@ Searchable Text PDF                        Scanned / Image PDF
 
 | Category | Technology Used | Description |
 | :--- | :--- | :--- |
-| **Cloud Infrastructure** | Oracle Cloud Infrastructure (OCI) | Production hosting platform (Ubuntu 24.04 LTS VM) |
-| **Reverse Proxy** | Nginx | Host reverse proxy routing public HTTP traffic to backend container |
+| **Cloud Infrastructure** | Railway | Production hosting platform (containerized Dockerfile deployment) |
+| **Historical Cloud Hosting** | Oracle Cloud Infrastructure (OCI) | Original hosting environment (Ubuntu 24.04 LTS VM + Nginx, archived) |
 | **Backend Framework** | FastAPI | REST API routing and OpenAPI generation |
 | **Frontend Interface** | Streamlit | Interactive web user interface client |
 | **LLM Provider** | Google Gemini (`gemini-3.1-flash-lite`) | Generative question answering with 3-tier 429 fallback (`3.5-flash-lite`, `3.6-flash`) |
@@ -284,24 +283,24 @@ Executes container health checks targeting `http://localhost:8000/health`.
 
 ---
 
-## 🌐 Production Deployment Overview (OCI)
+## 🌐 Production Deployment Overview (Railway)
 
-SpectralReader is deployed in production on **Oracle Cloud Infrastructure (OCI)** using an Ubuntu 24.04 LTS Compute VM.
+SpectralReader is hosted in production on **Railway** using the repository's multi-stage Dockerfile.
 
 ### Deployment Architecture Highlights
-1. **Infrastructure & Networking**:
-   - Hosted on an OCI Public Subnet VM running Ubuntu 24.04 LTS.
-   - OCI networking and firewall rules are configured to allow public HTTP access.
-2. **Container Management**:
-   - Deployed and orchestrated using Docker Compose.
-   - Docker Compose exposes the backend service locally on the host.
-   - Generative QA uses Gemini REST endpoints driven by the `GEMINI_API_KEY` environment variable.
-3. **Nginx Reverse Proxy**:
-   - Nginx acts as the reverse proxy for incoming HTTP requests to the backend service.
-   - Standard proxy headers and body size limits are configured to support PDF uploads.
+1. **Containerized Execution**:
+   - Built directly from the root `Dockerfile` with system-level Tesseract OCR and Poppler binaries.
+   - Dynamic port binding driven by the `${PORT}` environment variable injected by Railway at runtime.
+   - Service health probes automatically verified at `/health`.
+2. **Provider & LLM Integrations**:
+   - Generative QA uses Google Gemini REST endpoints configured via the `GEMINI_API_KEY` secret.
+   - In-memory vector models (`paraphrase-multilingual-mpnet-base-v2` and `ms-marco-MiniLM-L-12-v2`) pre-warm on container startup.
+3. **Frontend Connectivity**:
+   - The interactive Streamlit Cloud client communicates with the Railway backend via `STREAMLIT_BACKEND_URL` configured in Streamlit secrets.
 
-### 📜 Historical Deployment Note
-Previously, the FastAPI backend was hosted on Render (`spectralreader-api.onrender.com`). The backend deployment was transitioned to Oracle Cloud Infrastructure (OCI) with Docker Compose and Nginx for dedicated infrastructure control, persistent model caching, and improved inference performance.
+### 📜 Historical Hosting Context (Oracle Cloud Infrastructure & Render)
+- **Historical Hosting: Oracle Cloud Infrastructure (OCI)**: OCI was the original dedicated backend hosting environment for SpectralReader. The backend was hosted on an Ubuntu 24.04 LTS Compute VM (`VM.Standard.E5.Flex`) with a dedicated VCN (`spectralreader-vcn`), Docker Compose, and Nginx reverse proxying. Full forensic deployment evidence, active logs, and console screenshots are preserved in [`historical-oci-screenshots/`](historical-oci-screenshots/). The backend was subsequently migrated to Railway after the OCI trial period concluded.
+- **Initial Hosting (Render)**: Prior to OCI, earlier prototypes of the API were hosted on Render (`spectralreader-api.onrender.com`).
 
 ---
 
@@ -491,18 +490,16 @@ Docker build and local container runtime were verified successfully:
 - Container runtime verified on port 8000 with pre-warmed vector models (`paraphrase-multilingual-mpnet-base-v2` and `ms-marco-MiniLM-L-12-v2`).
 - Health probes return HTTP 200 with `models_loaded: true`.
 
-To verify a production deployment on OCI:
+To verify a deployment (local container or Railway):
 
 1. **Check Container Status**:
-   Run `docker compose ps` to ensure the `spectralreader-api` container is running and healthy.
-2. **Local Health Probe**:
-   Run `curl -f http://localhost:8000/health` to confirm the backend service reports `"status": "ok"` and component provider status.
-3. **Public Reverse Proxy Probe**:
-   Run `curl -f http://<PUBLIC_HOST>/health` to confirm Nginx correctly routes external Port 80 traffic to the backend.
-4. **Interactive Swagger Documentation**:
-   Navigate to `http://<PUBLIC_HOST>/docs` in a web browser to verify interactive API documentation rendering.
-5. **OpenAPI Schema Verification**:
-   Access `http://<PUBLIC_HOST>/openapi.json` to verify the OpenAPI JSON specification download.
+   Ensure the container is running and healthy. On Railway, monitor deployment build logs and runtime status in the Railway dashboard.
+2. **Health Probe**:
+   Run `curl -f https://<YOUR_APP_URL>/health` (or `http://localhost:8000/health` locally) to confirm the backend service reports `"status": "ok"`, `models_loaded: true`, and component statuses.
+3. **Interactive Swagger Documentation**:
+   Navigate to `https://<YOUR_APP_URL>/docs` in a web browser to verify interactive API documentation rendering.
+4. **OpenAPI Schema Verification**:
+   Access `https://<YOUR_APP_URL>/openapi.json` to verify the OpenAPI JSON specification download.
 
 ---
 
@@ -510,11 +507,11 @@ To verify a production deployment on OCI:
 
 | Issue / Symptom | Possible Cause | Recommended Solution |
 | :--- | :--- | :--- |
-| **Gemini API Key missing / 401 Unauthorized** | Missing `GEMINI_API_KEY` in environment | Set a valid Google Gemini API Key in `.env`. |
-| **Container crashes on startup / Out of Memory** | Insufficient host system RAM during model pre-warming | Allocate at least 4GB RAM or add swap memory on the OCI VM host. |
-| **Nginx 502 Bad Gateway** | FastAPI container is down or not listening locally | Verify container status with `docker compose ps` and inspect container logs. |
-| **Public Host Connection Refused / Timeout** | OCI Security List or host firewall blocking Port 80 | Configure OCI networking and host firewall rules to allow traffic on Port 80. |
-| **HTTP 413 Payload Too Large on PDF Upload** | Nginx client body size limit reached | Increase client body size limit in Nginx site configuration. |
+| **Gemini API Key missing / 401 Unauthorized** | Missing `GEMINI_API_KEY` in environment variables | Add `GEMINI_API_KEY` to Railway service variables (or local `.env`). |
+| **Container crashes on startup / Out of Memory** | Insufficient memory allocated during model pre-warming | Allocate at least 2 GB–4 GB RAM in your deployment environment settings. |
+| **Connection Refused / Health Check Failure** | App not listening on dynamic `$PORT` | Ensure Uvicorn binds to `0.0.0.0:${PORT:-8000}` (handled automatically by Dockerfile). |
+| **Streamlit Client Cannot Connect to Backend** | Incorrect `STREAMLIT_BACKEND_URL` | Set `STREAMLIT_BACKEND_URL` in Streamlit Cloud Secrets to the Railway public URL. |
+| **HTTP 413 Payload Too Large on PDF Upload** | Reverse proxy or gateway body size limit reached | Ensure reverse proxy or ingress permits multipart PDF uploads (FastAPI handles streams natively). |
 
 ---
 

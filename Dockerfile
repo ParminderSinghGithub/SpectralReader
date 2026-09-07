@@ -43,7 +43,7 @@ EXPOSE 8000
 
 # Docker Healthcheck targeting /health endpoint
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
 # Launch FastAPI application using dynamic PORT environment variable binding
-CMD ["sh", "-c", "uvicorn app.main_api:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "uvicorn app.main_api:app --host 0.0.0.0 --port ${PORT:-8000}"]
